@@ -4,6 +4,10 @@
 <title>Admin Panel - Azad Prime Medico</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
 <style>
 body { font-family: Arial; background:#f5f5f5; padding:20px; }
 
@@ -13,7 +17,7 @@ body { font-family: Arial; background:#f5f5f5; padding:20px; }
     background:white;
     padding:20px;
     border-radius:10px;
-    box-shadow:0 2px 8px rgba(0,0,0,0.2);
+    margin-bottom:20px;
 }
 
 input {
@@ -28,6 +32,7 @@ button {
     background:green;
     color:white;
     border:none;
+    margin-top:5px;
 }
 
 #adminPanel { display:none; }
@@ -51,12 +56,11 @@ button {
 <button onclick="addProduct()">Add Product</button>
 </div>
 
-<script type="module">
+<!-- PRODUCTS LIST -->
+<h3 style="text-align:center;">All Products</h3>
+<div id="productList"></div>
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
-
+<script>
 const firebaseConfig = {
   apiKey: "AIzaSyCqpzQlN_qu53CKbPa_XFDnoyN6SgxhKRw",
   authDomain: "azad-prime-medico.firebaseapp.com",
@@ -66,29 +70,27 @@ const firebaseConfig = {
   appId: "1:111274201862:web:a052eff79eca9f7d1ac487"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
+firebase.initializeApp(firebaseConfig);
 
-// LOGIN FUNCTION
-window.login = async function() {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
+const db = firebase.firestore();
+const auth = firebase.auth();
 
-    try {
-        await signInWithEmailAndPassword(auth, email, password);
-        alert("Login Successful ✅");
-    } catch (error) {
-        alert("Login Failed ❌");
-        console.error(error);
-    }
-};
+// LOGIN
+function login() {
+    let email = document.getElementById("email").value;
+    let password = document.getElementById("password").value;
+
+    auth.signInWithEmailAndPassword(email, password)
+    .then(() => alert("Login Successful ✅"))
+    .catch(() => alert("Login Failed ❌"));
+}
 
 // AUTH CHECK
-onAuthStateChanged(auth, (user) => {
+auth.onAuthStateChanged(function(user) {
     if (user) {
         document.getElementById("loginBox").style.display = "none";
         document.getElementById("adminPanel").style.display = "block";
+        loadProducts();
     } else {
         document.getElementById("loginBox").style.display = "block";
         document.getElementById("adminPanel").style.display = "none";
@@ -96,41 +98,65 @@ onAuthStateChanged(auth, (user) => {
 });
 
 // ADD PRODUCT
-window.addProduct = async function() {
+function addProduct() {
 
     if (!auth.currentUser) {
         alert("Login required ❌");
         return;
     }
 
-    const name = document.getElementById("name").value;
-    const price = parseFloat(document.getElementById("price").value);
-    const image = document.getElementById("image").value;
+    let name = document.getElementById("name").value;
+    let price = parseFloat(document.getElementById("price").value);
+    let image = document.getElementById("image").value;
 
     if (!name || !price || !image) {
         alert("Fill all fields");
         return;
     }
 
-    try {
-        await addDoc(collection(db, "products"), {
-            name: name,
-            price: price,
-            image: image
-        });
-
+    db.collection("products").add({
+        name: name,
+        price: price,
+        image: image
+    })
+    .then(() => {
         alert("Product Added ✅");
-
         document.getElementById("name").value = "";
         document.getElementById("price").value = "";
         document.getElementById("image").value = "";
+        loadProducts();
+    });
+}
 
-    } catch (error) {
-        alert("Error adding product");
-        console.error(error);
-    }
-};
+// LOAD PRODUCTS
+function loadProducts() {
+    db.collection("products").get().then((snapshot) => {
+        let html = "";
 
+        snapshot.forEach((doc) => {
+            let p = doc.data();
+
+            html += `
+            <div style="background:white;margin:10px;padding:10px;border-radius:8px;text-align:center;">
+                <img src="${p.image}" width="100"><br>
+                <b>${p.name}</b><br>
+                ₹${p.price}<br>
+                <button onclick="deleteProduct('${doc.id}')">Delete</button>
+            </div>`;
+        });
+
+        document.getElementById("productList").innerHTML = html;
+    });
+}
+
+// DELETE PRODUCT
+function deleteProduct(id) {
+    db.collection("products").doc(id).delete()
+    .then(() => {
+        alert("Deleted ✅");
+        loadProducts();
+    });
+}
 </script>
 
 </body>
