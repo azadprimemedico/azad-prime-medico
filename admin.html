@@ -1,56 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>Admin Panel - Azad Prime Medico</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<style>
-body { font-family: Arial; background:#f5f5f5; padding:20px; }
-
-h1 { text-align:center; }
-
-.form-box {
-    max-width:400px;
-    margin:auto;
-    background:white;
-    padding:20px;
-    border-radius:10px;
-    box-shadow:0 2px 8px rgba(0,0,0,0.2);
-}
-
-input {
-    width:100%;
-    padding:10px;
-    margin:10px 0;
-}
-
-button {
-    width:100%;
-    padding:10px;
-    background:green;
-    color:white;
-    border:none;
-    cursor:pointer;
-}
-</style>
-</head>
-
-<body>
-
-<h1>Admin Panel</h1>
-
-<div class="form-box">
-<input type="text" id="name" placeholder="Product Name">
-<input type="number" id="price" placeholder="Price">
-<input type="text" id="image" placeholder="Image URL">
-
-<button onclick="addProduct()">Add Product</button>
-</div>
-
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
 import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCqpzQlN_qu53CKbPa_XFDnoyN6SgxhKRw",
@@ -63,38 +15,66 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 
+// HIDE ADMIN PANEL INITIALLY
+document.getElementById("adminPanel").style.display = "none";
+
+// LOGIN FUNCTION
+window.login = function() {
+    let email = document.getElementById("email").value;
+    let password = document.getElementById("password").value;
+
+    signInWithEmailAndPassword(auth, email, password)
+    .then(() => {
+        alert("Login Successful ✅");
+    })
+    .catch(() => {
+        alert("Invalid Login ❌");
+    });
+}
+
+// AUTH STATE CHECK (VERY IMPORTANT)
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        // Logged in
+        document.getElementById("loginBox").style.display = "none";
+        document.getElementById("adminPanel").style.display = "block";
+    } else {
+        // NOT logged in
+        document.getElementById("loginBox").style.display = "block";
+        document.getElementById("adminPanel").style.display = "none";
+    }
+});
+
+// ADD PRODUCT
 window.addProduct = async function() {
+
+    if (!auth.currentUser) {
+        alert("Please login first ❌");
+        return;
+    }
 
     let name = document.getElementById("name").value;
     let price = parseFloat(document.getElementById("price").value);
     let image = document.getElementById("image").value;
 
     if (!name || !price || !image) {
-        alert("Please fill all fields");
+        alert("Fill all fields");
         return;
     }
 
-    try {
-        await addDoc(collection(db, "products"), {
-            name: name,
-            price: price,
-            image: image
-        });
+    await addDoc(collection(db, "products"), {
+        name: name,
+        price: price,
+        image: image
+    });
 
-        alert("Product Added Successfully ✅");
+    alert("Product Added ✅");
 
-        document.getElementById("name").value = "";
-        document.getElementById("price").value = "";
-        document.getElementById("image").value = "";
-
-    } catch (error) {
-        console.error(error);
-        alert("Error adding product");
-    }
+    document.getElementById("name").value = "";
+    document.getElementById("price").value = "";
+    document.getElementById("image").value = "";
 }
 
 </script>
-
-</body>
-</html>
