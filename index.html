@@ -25,7 +25,6 @@ header {
     color:white;
     padding:8px 12px;
     border-radius:20px;
-    cursor:pointer;
 }
 
 /* SEARCH */
@@ -110,7 +109,7 @@ button {
 </header>
 
 <div class="search-box">
-<input type="text" id="search" placeholder="Search medicines..." onkeyup="searchProducts()">
+<input type="text" id="search" placeholder="Search medicines...">
 </div>
 
 <div class="banner">
@@ -129,7 +128,6 @@ button {
 
 <button class="checkout" onclick="checkout()">Checkout</button>
 
-<!-- FIREBASE -->
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
@@ -158,31 +156,40 @@ async function loadProducts() {
     displayProducts(allProducts);
 }
 
-// DISPLAY
+// DISPLAY PRODUCTS
 function displayProducts(data) {
     let html = "";
-    data.forEach(p => {
+    data.forEach((p, index) => {
         html += `
         <div class="card">
             <img src="${p.image}">
             <h4>${p.name}</h4>
             <p>₹${p.price}</p>
-            <button onclick="addToCart('${p.name}', ${p.price})">Add</button>
+            <button class="addBtn" data-index="${index}">Add</button>
         </div>`;
     });
+
     document.getElementById("product-list").innerHTML = html;
+
+    // ADD EVENT LISTENER (FIX)
+    document.querySelectorAll(".addBtn").forEach(btn => {
+        btn.addEventListener("click", function() {
+            let i = this.getAttribute("data-index");
+            addToCart(allProducts[i].name, allProducts[i].price);
+        });
+    });
 }
 
-// ADD TO CART
-window.addToCart = function(name, price) {
+// ADD TO CART (FIXED)
+function addToCart(name, price) {
     cart.push({name, price});
     total += price;
+
     document.getElementById("cartBox").innerText = "🛒 Cart (" + cart.length + ")";
 }
 
 // CHECKOUT
 window.checkout = function() {
-
     if(cart.length === 0){
         alert("Cart is empty");
         return;
@@ -200,11 +207,11 @@ window.checkout = function() {
 }
 
 // SEARCH
-window.searchProducts = function() {
-    let value = document.getElementById("search").value.toLowerCase();
+document.getElementById("search").addEventListener("keyup", function() {
+    let value = this.value.toLowerCase();
     let filtered = allProducts.filter(p => p.name.toLowerCase().includes(value));
     displayProducts(filtered);
-}
+});
 
 // CATEGORY FILTER
 window.filterCategory = function(cat) {
