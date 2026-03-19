@@ -17,41 +17,44 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// HIDE ADMIN PANEL INITIALLY
-document.getElementById("adminPanel").style.display = "none";
+// FIX: wait for page load
+window.onload = function() {
 
-// LOGIN FUNCTION
+    const loginBox = document.getElementById("loginBox");
+    const adminPanel = document.getElementById("adminPanel");
+
+    adminPanel.style.display = "none";
+
+    // AUTH CHECK
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            loginBox.style.display = "none";
+            adminPanel.style.display = "block";
+        } else {
+            loginBox.style.display = "block";
+            adminPanel.style.display = "none";
+        }
+    });
+};
+
+// LOGIN
 window.login = function() {
     let email = document.getElementById("email").value;
     let password = document.getElementById("password").value;
 
     signInWithEmailAndPassword(auth, email, password)
-    .then(() => {
-        alert("Login Successful ✅");
-    })
-    .catch(() => {
-        alert("Invalid Login ❌");
+    .then(() => alert("Login Successful ✅"))
+    .catch((error) => {
+        console.error(error);
+        alert("Login Failed ❌");
     });
-}
-
-// AUTH STATE CHECK (VERY IMPORTANT)
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        // Logged in
-        document.getElementById("loginBox").style.display = "none";
-        document.getElementById("adminPanel").style.display = "block";
-    } else {
-        // NOT logged in
-        document.getElementById("loginBox").style.display = "block";
-        document.getElementById("adminPanel").style.display = "none";
-    }
-});
+};
 
 // ADD PRODUCT
 window.addProduct = async function() {
 
     if (!auth.currentUser) {
-        alert("Please login first ❌");
+        alert("Login required ❌");
         return;
     }
 
@@ -64,17 +67,23 @@ window.addProduct = async function() {
         return;
     }
 
-    await addDoc(collection(db, "products"), {
-        name: name,
-        price: price,
-        image: image
-    });
+    try {
+        await addDoc(collection(db, "products"), {
+            name: name,
+            price: price,
+            image: image
+        });
 
-    alert("Product Added ✅");
+        alert("Product Added ✅");
 
-    document.getElementById("name").value = "";
-    document.getElementById("price").value = "";
-    document.getElementById("image").value = "";
-}
+        document.getElementById("name").value = "";
+        document.getElementById("price").value = "";
+        document.getElementById("image").value = "";
+
+    } catch (error) {
+        console.error(error);
+        alert("Error adding product");
+    }
+};
 
 </script>
