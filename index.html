@@ -25,6 +25,7 @@ header {
     color:white;
     padding:8px 12px;
     border-radius:20px;
+    cursor:pointer;
 }
 
 /* SEARCH */
@@ -88,6 +89,16 @@ button {
     padding:6px;
     margin-top:5px;
 }
+.checkout {
+    position:fixed;
+    bottom:20px;
+    right:20px;
+    background:green;
+    color:white;
+    padding:15px;
+    border:none;
+    border-radius:10px;
+}
 </style>
 </head>
 
@@ -95,7 +106,7 @@ button {
 
 <header>
 <div class="logo">AZAD PRIME MEDICO</div>
-<div class="cart">🛒 Cart (0)</div>
+<div class="cart" id="cartBox">🛒 Cart (0)</div>
 </header>
 
 <div class="search-box">
@@ -116,6 +127,8 @@ button {
 
 <div class="products" id="product-list"></div>
 
+<button class="checkout" onclick="checkout()">Checkout</button>
+
 <!-- FIREBASE -->
 <script type="module">
 
@@ -132,6 +145,8 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 let allProducts = [];
+let cart = [];
+let total = 0;
 
 // LOAD PRODUCTS
 async function loadProducts() {
@@ -152,10 +167,36 @@ function displayProducts(data) {
             <img src="${p.image}">
             <h4>${p.name}</h4>
             <p>₹${p.price}</p>
-            <button>Add to Cart</button>
+            <button onclick="addToCart('${p.name}', ${p.price})">Add</button>
         </div>`;
     });
     document.getElementById("product-list").innerHTML = html;
+}
+
+// ADD TO CART
+window.addToCart = function(name, price) {
+    cart.push({name, price});
+    total += price;
+    document.getElementById("cartBox").innerText = "🛒 Cart (" + cart.length + ")";
+}
+
+// CHECKOUT
+window.checkout = function() {
+
+    if(cart.length === 0){
+        alert("Cart is empty");
+        return;
+    }
+
+    let message = "Order Details:%0A";
+
+    cart.forEach(item => {
+        message += item.name + " - ₹" + item.price + "%0A";
+    });
+
+    message += "Total: ₹" + total;
+
+    window.open("https://wa.me/917633801161?text=" + message);
 }
 
 // SEARCH
