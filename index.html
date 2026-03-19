@@ -6,34 +6,57 @@
 
 <style>
 body { font-family: Arial; margin:0; background:#f5f5f5; }
+
 header {
     background: linear-gradient(90deg, green, red);
     color:white;
     padding:15px;
     text-align:center;
 }
+
 .products {
     display:flex;
     flex-wrap:wrap;
     justify-content:center;
 }
+
 .card {
     background:white;
     margin:10px;
     padding:10px;
     width:200px;
     border-radius:10px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.2);
+    text-align:center;
 }
+
 img {
     width:100%;
     height:150px;
     object-fit:cover;
+    border-radius:5px;
 }
+
 button {
     background:red;
     color:white;
     border:none;
     padding:8px;
+    margin-top:5px;
+    cursor:pointer;
+    border-radius:5px;
+}
+
+.checkout-btn {
+    position:fixed;
+    bottom:20px;
+    right:20px;
+    padding:15px;
+    background:green;
+    color:white;
+    border:none;
+    border-radius:10px;
+    font-size:16px;
 }
 </style>
 </head>
@@ -46,6 +69,8 @@ button {
 </header>
 
 <div class="products" id="product-list"></div>
+
+<button class="checkout-btn" onclick="checkout()">Checkout</button>
 
 <!-- FIREBASE SCRIPT -->
 <script type="module">
@@ -65,25 +90,69 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// CART
+window.cart = [];
+window.total = 0;
+
 // LOAD PRODUCTS
 async function loadProducts() {
-    const querySnapshot = await getDocs(collection(db, "products"));
-    let html = "";
+    try {
+        const querySnapshot = await getDocs(collection(db, "products"));
+        let html = "";
 
-    querySnapshot.forEach((doc) => {
-        let p = doc.data();
-        html += `
-        <div class="card">
-            <img src="${p.image}">
-            <h3>${p.name}</h3>
-            <p>₹${p.price}</p>
-        </div>`;
-    });
+        querySnapshot.forEach((doc) => {
+            let p = doc.data();
 
-    document.getElementById("product-list").innerHTML = html;
+            let image = p.image && p.image.startsWith("http")
+                ? p.image
+                : "https://via.placeholder.com/200";
+
+            html += `
+            <div class="card">
+                <img src="${image}">
+                <h3>${p.name}</h3>
+                <p>₹${p.price}</p>
+                <button onclick="addToCart('${p.name}', ${p.price})">Add to Cart</button>
+            </div>`;
+        });
+
+        document.getElementById("product-list").innerHTML = html;
+
+    } catch (error) {
+        console.error("Error loading products:", error);
+        alert("Error loading products. Check Firebase connection.");
+    }
 }
 
 loadProducts();
+
+</script>
+
+<!-- CART SCRIPT -->
+<script>
+
+function addToCart(name, price) {
+    window.cart.push({name, price});
+    window.total += price;
+    alert(name + " added to cart");
+}
+
+function checkout() {
+    if (window.cart.length === 0) {
+        alert("Cart is empty");
+        return;
+    }
+
+    let message = "Order Details:%0A";
+
+    window.cart.forEach(item => {
+        message += item.name + " - ₹" + item.price + "%0A";
+    });
+
+    message += "Total: ₹" + window.total;
+
+    window.open("https://wa.me/917633801161?text=" + message);
+}
 
 </script>
 
