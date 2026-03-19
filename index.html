@@ -7,7 +7,6 @@
 <style>
 body { margin:0; font-family:Arial; background:#f1f3f6; }
 
-/* HEADER */
 header {
     background:white;
     padding:10px;
@@ -16,10 +15,7 @@ header {
     align-items:center;
     box-shadow:0 2px 5px rgba(0,0,0,0.1);
 }
-.logo {
-    font-weight:bold;
-    color:red;
-}
+.logo { font-weight:bold; color:red; }
 .cart {
     background:green;
     color:white;
@@ -27,11 +23,7 @@ header {
     border-radius:20px;
 }
 
-/* SEARCH */
-.search-box {
-    padding:10px;
-    background:white;
-}
+.search-box { padding:10px; background:white; }
 .search-box input {
     width:100%;
     padding:10px;
@@ -39,7 +31,6 @@ header {
     border:1px solid #ccc;
 }
 
-/* BANNER */
 .banner {
     background:linear-gradient(90deg, green, red);
     color:white;
@@ -47,7 +38,6 @@ header {
     text-align:center;
 }
 
-/* CATEGORIES */
 .categories {
     display:flex;
     overflow:auto;
@@ -62,7 +52,6 @@ header {
     cursor:pointer;
 }
 
-/* PRODUCTS */
 .products {
     display:flex;
     flex-wrap:wrap;
@@ -81,6 +70,7 @@ header {
     height:120px;
     object-fit:cover;
 }
+
 button {
     background:red;
     color:white;
@@ -88,6 +78,7 @@ button {
     padding:6px;
     margin-top:5px;
 }
+
 .checkout {
     position:fixed;
     bottom:20px;
@@ -122,6 +113,14 @@ button {
 <div class="cat" onclick="filterCategory('tablet')">Tablets</div>
 <div class="cat" onclick="filterCategory('syrup')">Syrup</div>
 <div class="cat" onclick="filterCategory('vitamin')">Vitamins</div>
+</div>
+
+<!-- PRESCRIPTION UPLOAD -->
+<div style="background:white;margin:10px;padding:15px;border-radius:10px;text-align:center;">
+<h3>Upload Prescription</h3>
+<input type="file" id="prescriptionFile">
+<br><br>
+<button onclick="uploadPrescription()">Upload & Order</button>
 </div>
 
 <div class="products" id="product-list"></div>
@@ -171,7 +170,6 @@ function displayProducts(data) {
 
     document.getElementById("product-list").innerHTML = html;
 
-    // ADD EVENT LISTENER (FIX)
     document.querySelectorAll(".addBtn").forEach(btn => {
         btn.addEventListener("click", function() {
             let i = this.getAttribute("data-index");
@@ -180,11 +178,10 @@ function displayProducts(data) {
     });
 }
 
-// ADD TO CART (FIXED)
+// CART
 function addToCart(name, price) {
     cart.push({name, price});
     total += price;
-
     document.getElementById("cartBox").innerText = "🛒 Cart (" + cart.length + ")";
 }
 
@@ -206,6 +203,22 @@ window.checkout = function() {
     window.open("https://wa.me/917633801161?text=" + message);
 }
 
+// PRESCRIPTION
+window.uploadPrescription = function() {
+    let fileInput = document.getElementById("prescriptionFile");
+
+    if(fileInput.files.length === 0){
+        alert("Please select a prescription");
+        return;
+    }
+
+    let message = "I want to order medicines with prescription.";
+
+    window.open("https://wa.me/917633801161?text=" + encodeURIComponent(message));
+
+    alert("Attach your prescription in WhatsApp.");
+}
+
 // SEARCH
 document.getElementById("search").addEventListener("keyup", function() {
     let value = this.value.toLowerCase();
@@ -213,7 +226,7 @@ document.getElementById("search").addEventListener("keyup", function() {
     displayProducts(filtered);
 });
 
-// CATEGORY FILTER
+// CATEGORY
 window.filterCategory = function(cat) {
     if(cat === "all") {
         displayProducts(allProducts);
