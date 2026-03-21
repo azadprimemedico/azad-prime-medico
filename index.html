@@ -134,6 +134,7 @@ button {
 <div id="cartItems"></div>
 <h4 id="cartTotal">Total: ₹0</h4>
 
+<button class="checkoutBtn" onclick="saveOrder()">Place Order</button>
 <button class="checkoutBtn" onclick="payNow()">Pay via UPI</button>
 <button class="checkoutBtn" onclick="checkout()">WhatsApp Order</button>
 <button class="closeBtn" onclick="closeCart()">Close</button>
@@ -142,7 +143,7 @@ button {
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCqpzQlN_qu53CKbPa_XFDnoyN6SgxhKRw",
@@ -157,20 +158,17 @@ let allProducts = [];
 let cart = [];
 let total = 0;
 
-// ✅ FIXED LOAD
+// LOAD PRODUCTS
 async function loadProducts() {
     const snapshot = await getDocs(collection(db, "products"));
     allProducts = [];
     snapshot.forEach(doc => {
-        allProducts.push({
-            id: doc.id,
-            ...doc.data()
-        });
+        allProducts.push({ id: doc.id, ...doc.data() });
     });
     displayProducts(allProducts);
 }
 
-// ✅ FIXED DISPLAY
+// DISPLAY
 function displayProducts(data) {
     let html = "";
     data.forEach(p => {
@@ -182,7 +180,6 @@ function displayProducts(data) {
             <button onclick='addToCart(${JSON.stringify(p)})'>Add</button>
         </div>`;
     });
-
     document.getElementById("product-list").innerHTML = html;
 }
 
@@ -193,13 +190,11 @@ window.addToCart = function(p) {
     document.getElementById("cartBox").innerText = "🛒 Cart (" + cart.length + ")";
 }
 
-// OPEN CART
+// CART UI
 window.openCart = function() {
     document.getElementById("cartPopup").style.display = "block";
     renderCart();
 }
-
-// CLOSE CART
 window.closeCart = function() {
     document.getElementById("cartPopup").style.display = "none";
 }
@@ -207,7 +202,6 @@ window.closeCart = function() {
 // RENDER CART
 function renderCart() {
     let html = "";
-
     cart.forEach((item, index) => {
         html += `
         <div style="border-bottom:1px solid #ddd; padding:8px;">
@@ -215,7 +209,6 @@ function renderCart() {
             <button onclick="removeItem(${index})" style="float:right;background:red;">X</button>
         </div>`;
     });
-
     document.getElementById("cartItems").innerHTML = html;
     document.getElementById("cartTotal").innerText = "Total: ₹" + total;
 }
@@ -228,56 +221,83 @@ window.removeItem = function(index) {
     renderCart();
 }
 
-// ✅ FIXED UPI
-window.payNow = function() {
-    if(total === 0){
+// SAVE ORDER + INVOICE
+window.saveOrder = async function() {
+
+    if(cart.length === 0){
         alert("Cart is empty");
         return;
     }
-let upi = "upi://pay?pa=gulamhamid164@okaxis&pn=AzadPrimeMedico&am=" + total;
-    window.open(upi);
 
-    alert("Payment done? Send screenshot on WhatsApp ✅");
+    let order = {
+        items: cart,
+        total: total,
+        status: "Pending",
+        date: new Date().toLocaleString()
+    };
+
+    let docRef = await addDoc(collection(db, "orders"), order);
+
+    alert("Order Placed ✅ ID: " + docRef.id);
+
+    generateInvoice(docRef.id, order);
+
+    cart = [];
+    total = 0;
+    document.getElementById("cartBox").innerText = "🛒 Cart (0)";
+    closeCart();
+}
+
+// INVOICE
+function generateInvoice(orderId, order) {
+    let html = `
+    <h2>Azad Prime Medico</h2>
+    <p>Order ID: ${orderId}</p>
+    <p>Date: ${order.date}</p>
+    <hr>`;
+    
+    order.items.forEach(i => {
+        html += `<p>${i.name} - ₹${i.price}</p>`;
+    });
+
+    html += `<hr><h3>Total: ₹${order.total}</h3><p>Status: ${order.status}</p>`;
+
+    let win = window.open("");
+    win.document.write(html);
+    win.print();
+}
+
+// UPI
+window.payNow = function() {
+    if(total === 0){ alert("Cart empty"); return; }
+    let upi = "upi://pay?pa=gulamhamid164@okaxis&pn=AzadPrimeMedico&am=" + total;
+    window.open(upi);
 }
 
 // WHATSAPP
 window.checkout = function() {
-    let message = "Order Details:%0A";
-    cart.forEach(item => {
-        message += item.name + " - ₹" + item.price + "%0A";
-    });
-    message += "Total: ₹" + total;
-
-    window.open("https://wa.me/917633801161?text=" + message);
+    let msg = "Order:%0A";
+    cart.forEach(i => msg += i.name + " ₹" + i.price + "%0A");
+    msg += "Total ₹" + total;
+    window.open("https://wa.me/917633801161?text=" + msg);
 }
 
 // PRESCRIPTION
 window.uploadPrescription = function() {
-    let fileInput = document.getElementById("prescriptionFile");
-
-    if(fileInput.files.length === 0){
-        alert("Please select prescription");
-        return;
-    }
-
     window.open("https://wa.me/917633801161?text=Sending prescription");
 }
 
 // SEARCH
 document.getElementById("search").addEventListener("keyup", function() {
-    let value = this.value.toLowerCase();
-    let filtered = allProducts.filter(p => p.name.toLowerCase().includes(value));
+    let val = this.value.toLowerCase();
+    let filtered = allProducts.filter(p => p.name.toLowerCase().includes(val));
     displayProducts(filtered);
 });
 
 // CATEGORY
 window.filterCategory = function(cat) {
-    if(cat === "all") {
-        displayProducts(allProducts);
-    } else {
-        let filtered = allProducts.filter(p => p.category === cat);
-        displayProducts(filtered);
-    }
+    if(cat === "all") displayProducts(allProducts);
+    else displayProducts(allProducts.filter(p => p.category === cat));
 }
 
 loadProducts();
