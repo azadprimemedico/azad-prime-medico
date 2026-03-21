@@ -7,7 +7,6 @@
 <style>
 body { margin:0; font-family:Arial; background:#f1f3f6; }
 
-/* HEADER */
 header {
     background:white;
     padding:10px;
@@ -25,7 +24,6 @@ header {
     cursor:pointer;
 }
 
-/* SEARCH */
 .search-box { padding:10px; background:white; }
 .search-box input {
     width:100%;
@@ -34,7 +32,6 @@ header {
     border:1px solid #ccc;
 }
 
-/* BANNER */
 .banner {
     background:linear-gradient(90deg, green, red);
     color:white;
@@ -42,7 +39,6 @@ header {
     text-align:center;
 }
 
-/* CATEGORIES */
 .categories {
     display:flex;
     overflow:auto;
@@ -57,7 +53,6 @@ header {
     cursor:pointer;
 }
 
-/* PRODUCTS */
 .products {
     display:flex;
     flex-wrap:wrap;
@@ -85,7 +80,6 @@ button {
     margin-top:5px;
 }
 
-/* CART POPUP */
 #cartPopup {
     display:none;
     position:fixed;
@@ -99,15 +93,8 @@ button {
     z-index:999;
     overflow:auto;
 }
-.checkoutBtn {
-    background:green;
-    width:100%;
-    margin-top:10px;
-}
-.closeBtn {
-    background:gray;
-    width:100%;
-}
+.checkoutBtn { background:green; width:100%; margin-top:10px; }
+.closeBtn { background:gray; width:100%; }
 </style>
 </head>
 
@@ -134,7 +121,6 @@ button {
 <div class="cat" onclick="filterCategory('vitamin')">Vitamins</div>
 </div>
 
-<!-- PRESCRIPTION -->
 <div style="background:white;margin:10px;padding:15px;border-radius:10px;text-align:center;">
 <h3>Upload Doctor Prescription</h3>
 <input type="file" id="prescriptionFile"><br><br>
@@ -143,7 +129,6 @@ button {
 
 <div class="products" id="product-list"></div>
 
-<!-- CART POPUP -->
 <div id="cartPopup">
 <h3>🛒 Your Cart</h3>
 <div id="cartItems"></div>
@@ -172,43 +157,39 @@ let allProducts = [];
 let cart = [];
 let total = 0;
 
-// LOAD PRODUCTS
+// ✅ FIXED LOAD
 async function loadProducts() {
     const snapshot = await getDocs(collection(db, "products"));
     allProducts = [];
     snapshot.forEach(doc => {
-        allProducts.push(doc.data());
+        allProducts.push({
+            id: doc.id,
+            ...doc.data()
+        });
     });
     displayProducts(allProducts);
 }
 
-// DISPLAY PRODUCTS
+// ✅ FIXED DISPLAY
 function displayProducts(data) {
     let html = "";
-    data.forEach((p, index) => {
+    data.forEach(p => {
         html += `
         <div class="card">
             <img src="${p.image}">
             <h4>${p.name}</h4>
             <p>₹${p.price}</p>
-            <button class="addBtn" data-index="${index}">Add</button>
+            <button onclick='addToCart(${JSON.stringify(p)})'>Add</button>
         </div>`;
     });
 
     document.getElementById("product-list").innerHTML = html;
-
-    document.querySelectorAll(".addBtn").forEach(btn => {
-        btn.addEventListener("click", function() {
-            let i = this.getAttribute("data-index");
-            addToCart(allProducts[i]);
-        });
-    });
 }
 
-// ADD TO CART
-function addToCart(p) {
+// CART
+window.addToCart = function(p) {
     cart.push(p);
-    total += p.price;
+    total += Number(p.price);
     document.getElementById("cartBox").innerText = "🛒 Cart (" + cart.length + ")";
 }
 
@@ -239,7 +220,7 @@ function renderCart() {
     document.getElementById("cartTotal").innerText = "Total: ₹" + total;
 }
 
-// REMOVE ITEM
+// REMOVE
 window.removeItem = function(index) {
     total -= cart[index].price;
     cart.splice(index, 1);
@@ -247,26 +228,21 @@ window.removeItem = function(index) {
     renderCart();
 }
 
-// PAYMENT (UPI)
+// ✅ FIXED UPI
 window.payNow = function() {
     if(total === 0){
         alert("Cart is empty");
         return;
     }
 
-    let upi = let upi = "upi://pay?pa=gulamhamid164@okaxis&pn=AzadPrimeMedico&am=" + total;
+    let upi = "upi://pay?pa=gulamhamid164@okaxis&pn=AzadPrimeMedico&am=" + total;
     window.open(upi);
 
-    alert("After payment, send screenshot on WhatsApp");
+    alert("Payment done? Send screenshot on WhatsApp ✅");
 }
 
-// WHATSAPP ORDER
+// WHATSAPP
 window.checkout = function() {
-    if(cart.length === 0){
-        alert("Cart is empty");
-        return;
-    }
-
     let message = "Order Details:%0A";
     cart.forEach(item => {
         message += item.name + " - ₹" + item.price + "%0A";
