@@ -7,6 +7,7 @@
 <style>
 body { margin:0; font-family:Arial; background:#f1f3f6; }
 
+/* HEADER */
 header {
     background:white;
     padding:10px;
@@ -21,8 +22,10 @@ header {
     color:white;
     padding:8px 12px;
     border-radius:20px;
+    cursor:pointer;
 }
 
+/* SEARCH */
 .search-box { padding:10px; background:white; }
 .search-box input {
     width:100%;
@@ -31,6 +34,7 @@ header {
     border:1px solid #ccc;
 }
 
+/* BANNER */
 .banner {
     background:linear-gradient(90deg, green, red);
     color:white;
@@ -38,6 +42,7 @@ header {
     text-align:center;
 }
 
+/* CATEGORIES */
 .categories {
     display:flex;
     overflow:auto;
@@ -52,6 +57,7 @@ header {
     cursor:pointer;
 }
 
+/* PRODUCTS */
 .products {
     display:flex;
     flex-wrap:wrap;
@@ -79,15 +85,28 @@ button {
     margin-top:5px;
 }
 
-.checkout {
+/* CART POPUP */
+#cartPopup {
+    display:none;
     position:fixed;
-    bottom:20px;
-    right:20px;
-    background:green;
-    color:white;
+    right:0;
+    top:0;
+    width:320px;
+    height:100%;
+    background:white;
+    box-shadow:-3px 0 10px rgba(0,0,0,0.2);
     padding:15px;
-    border:none;
-    border-radius:10px;
+    z-index:999;
+    overflow:auto;
+}
+.checkoutBtn {
+    background:green;
+    width:100%;
+    margin-top:10px;
+}
+.closeBtn {
+    background:gray;
+    width:100%;
 }
 </style>
 </head>
@@ -96,7 +115,7 @@ button {
 
 <header>
 <div class="logo">AZAD PRIME MEDICO</div>
-<div class="cart" id="cartBox">🛒 Cart (0)</div>
+<div class="cart" id="cartBox" onclick="openCart()">🛒 Cart (0)</div>
 </header>
 
 <div class="search-box">
@@ -115,17 +134,25 @@ button {
 <div class="cat" onclick="filterCategory('vitamin')">Vitamins</div>
 </div>
 
-<!-- PRESCRIPTION UPLOAD -->
+<!-- PRESCRIPTION -->
 <div style="background:white;margin:10px;padding:15px;border-radius:10px;text-align:center;">
-<h3>Upload Prescription</h3>
-<input type="file" id="prescriptionFile">
-<br><br>
+<h3>Upload Doctor Prescription</h3>
+<input type="file" id="prescriptionFile"><br><br>
 <button onclick="uploadPrescription()">Upload & Order</button>
 </div>
 
 <div class="products" id="product-list"></div>
 
-<button class="checkout" onclick="checkout()">Checkout</button>
+<!-- CART POPUP -->
+<div id="cartPopup">
+<h3>🛒 Your Cart</h3>
+<div id="cartItems"></div>
+<h4 id="cartTotal">Total: ₹0</h4>
+
+<button class="checkoutBtn" onclick="payNow()">Pay via UPI</button>
+<button class="checkoutBtn" onclick="checkout()">WhatsApp Order</button>
+<button class="closeBtn" onclick="closeCart()">Close</button>
+</div>
 
 <script type="module">
 
@@ -173,19 +200,67 @@ function displayProducts(data) {
     document.querySelectorAll(".addBtn").forEach(btn => {
         btn.addEventListener("click", function() {
             let i = this.getAttribute("data-index");
-            addToCart(allProducts[i].name, allProducts[i].price);
+            addToCart(allProducts[i]);
         });
     });
 }
 
-// CART
-function addToCart(name, price) {
-    cart.push({name, price});
-    total += price;
+// ADD TO CART
+function addToCart(p) {
+    cart.push(p);
+    total += p.price;
     document.getElementById("cartBox").innerText = "🛒 Cart (" + cart.length + ")";
 }
 
-// CHECKOUT
+// OPEN CART
+window.openCart = function() {
+    document.getElementById("cartPopup").style.display = "block";
+    renderCart();
+}
+
+// CLOSE CART
+window.closeCart = function() {
+    document.getElementById("cartPopup").style.display = "none";
+}
+
+// RENDER CART
+function renderCart() {
+    let html = "";
+
+    cart.forEach((item, index) => {
+        html += `
+        <div style="border-bottom:1px solid #ddd; padding:8px;">
+            ${item.name} - ₹${item.price}
+            <button onclick="removeItem(${index})" style="float:right;background:red;">X</button>
+        </div>`;
+    });
+
+    document.getElementById("cartItems").innerHTML = html;
+    document.getElementById("cartTotal").innerText = "Total: ₹" + total;
+}
+
+// REMOVE ITEM
+window.removeItem = function(index) {
+    total -= cart[index].price;
+    cart.splice(index, 1);
+    document.getElementById("cartBox").innerText = "🛒 Cart (" + cart.length + ")";
+    renderCart();
+}
+
+// PAYMENT (UPI)
+window.payNow = function() {
+    if(total === 0){
+        alert("Cart is empty");
+        return;
+    }
+
+    let upi = let upi = "upi://pay?pa=gulamhamid164@okaxis&pn=AzadPrimeMedico&am=" + total;
+    window.open(upi);
+
+    alert("After payment, send screenshot on WhatsApp");
+}
+
+// WHATSAPP ORDER
 window.checkout = function() {
     if(cart.length === 0){
         alert("Cart is empty");
@@ -193,11 +268,9 @@ window.checkout = function() {
     }
 
     let message = "Order Details:%0A";
-
     cart.forEach(item => {
         message += item.name + " - ₹" + item.price + "%0A";
     });
-
     message += "Total: ₹" + total;
 
     window.open("https://wa.me/917633801161?text=" + message);
@@ -208,15 +281,11 @@ window.uploadPrescription = function() {
     let fileInput = document.getElementById("prescriptionFile");
 
     if(fileInput.files.length === 0){
-        alert("Please select a prescription");
+        alert("Please select prescription");
         return;
     }
 
-    let message = "I want to order medicines with prescription.";
-
-    window.open("https://wa.me/917633801161?text=" + encodeURIComponent(message));
-
-    alert("Attach your prescription in WhatsApp.");
+    window.open("https://wa.me/917633801161?text=Sending prescription");
 }
 
 // SEARCH
