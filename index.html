@@ -12,8 +12,6 @@ header {
     padding:10px;
     display:flex;
     justify-content:space-between;
-    align-items:center;
-    box-shadow:0 2px 5px rgba(0,0,0,0.1);
 }
 .logo { font-weight:bold; color:red; }
 .cart {
@@ -24,40 +22,7 @@ header {
     cursor:pointer;
 }
 
-.search-box { padding:10px; background:white; }
-.search-box input {
-    width:100%;
-    padding:10px;
-    border-radius:8px;
-    border:1px solid #ccc;
-}
-
-.banner {
-    background:linear-gradient(90deg, green, red);
-    color:white;
-    padding:20px;
-    text-align:center;
-}
-
-.categories {
-    display:flex;
-    overflow:auto;
-    background:white;
-    padding:10px;
-}
-.cat {
-    margin:5px;
-    padding:10px;
-    background:#eee;
-    border-radius:20px;
-    cursor:pointer;
-}
-
-.products {
-    display:flex;
-    flex-wrap:wrap;
-    justify-content:center;
-}
+.products { display:flex; flex-wrap:wrap; justify-content:center; }
 .card {
     background:white;
     width:160px;
@@ -65,19 +30,6 @@ header {
     padding:10px;
     border-radius:10px;
     text-align:center;
-}
-.card img {
-    width:100%;
-    height:120px;
-    object-fit:cover;
-}
-
-button {
-    background:red;
-    color:white;
-    border:none;
-    padding:6px;
-    margin-top:5px;
 }
 
 #cartPopup {
@@ -88,13 +40,12 @@ button {
     width:320px;
     height:100%;
     background:white;
-    box-shadow:-3px 0 10px rgba(0,0,0,0.2);
     padding:15px;
-    z-index:999;
     overflow:auto;
 }
-.checkoutBtn { background:green; width:100%; margin-top:10px; }
-.closeBtn { background:gray; width:100%; }
+
+input { padding:8px; margin:5px; width:90%; }
+button { padding:8px; margin-top:5px; }
 </style>
 </head>
 
@@ -102,42 +53,24 @@ button {
 
 <header>
 <div class="logo">AZAD PRIME MEDICO</div>
-<div class="cart" id="cartBox" onclick="openCart()">🛒 Cart (0)</div>
+<div class="cart" onclick="openCart()">🛒 Cart (<span id="cartCount">0</span>)</div>
 </header>
 
-<div class="search-box">
-<input type="text" id="search" placeholder="Search medicines...">
-</div>
-
-<div class="banner">
-<h2>Online Medical Store - Ranchi</h2>
-<p>Fast Delivery | Genuine Medicines</p>
-</div>
-
-<div class="categories">
-<div class="cat" onclick="filterCategory('all')">All</div>
-<div class="cat" onclick="filterCategory('tablet')">Tablets</div>
-<div class="cat" onclick="filterCategory('syrup')">Syrup</div>
-<div class="cat" onclick="filterCategory('vitamin')">Vitamins</div>
-</div>
-
-<div style="background:white;margin:10px;padding:15px;border-radius:10px;text-align:center;">
-<h3>Upload Doctor Prescription</h3>
-<input type="file" id="prescriptionFile"><br><br>
-<button onclick="uploadPrescription()">Upload & Order</button>
+<div style="padding:10px;">
+<input type="text" id="name" placeholder="Customer Name">
+<input type="text" id="phone" placeholder="Phone Number">
 </div>
 
 <div class="products" id="product-list"></div>
 
 <div id="cartPopup">
-<h3>🛒 Your Cart</h3>
+<h3>Cart</h3>
 <div id="cartItems"></div>
-<h4 id="cartTotal">Total: ₹0</h4>
+<h4 id="total">Total ₹0</h4>
 
-<button class="checkoutBtn" onclick="saveOrder()">Place Order</button>
-<button class="checkoutBtn" onclick="payNow()">Pay via UPI</button>
-<button class="checkoutBtn" onclick="checkout()">WhatsApp Order</button>
-<button class="closeBtn" onclick="closeCart()">Close</button>
+<button onclick="placeOrder()">Place Order</button>
+<button onclick="payNow()">Pay UPI</button>
+<button onclick="closeCart()">Close</button>
 </div>
 
 <script type="module">
@@ -145,164 +78,133 @@ button {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
 import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
-const firebaseConfig = {
+const app = initializeApp({
   apiKey: "AIzaSyCqpzQlN_qu53CKbPa_XFDnoyN6SgxhKRw",
   authDomain: "azad-prime-medico.firebaseapp.com",
   projectId: "azad-prime-medico"
-};
+});
 
-const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let allProducts = [];
-let cart = [];
-let total = 0;
+let products=[], cart=[];
 
 // LOAD PRODUCTS
-async function loadProducts() {
-    const snapshot = await getDocs(collection(db, "products"));
-    allProducts = [];
-    snapshot.forEach(doc => {
-        allProducts.push({ id: doc.id, ...doc.data() });
-    });
-    displayProducts(allProducts);
+async function loadProducts(){
+ let snap = await getDocs(collection(db,"products"));
+ snap.forEach(doc=>{
+  products.push({id:doc.id,...doc.data(),qty:1});
+ });
+ display(products);
 }
 
-// DISPLAY
-function displayProducts(data) {
-    let html = "";
-    data.forEach(p => {
-        html += `
-        <div class="card">
-            <img src="${p.image}">
-            <h4>${p.name}</h4>
-            <p>₹${p.price}</p>
-            <button onclick='addToCart(${JSON.stringify(p)})'>Add</button>
-        </div>`;
-    });
-    document.getElementById("product-list").innerHTML = html;
+function display(data){
+ let html="";
+ data.forEach(p=>{
+  html+=`
+  <div class="card">
+   <img src="${p.image}" width="100">
+   <h4>${p.name}</h4>
+   ₹${p.price}<br>
+   <button onclick='add(${JSON.stringify(p)})'>Add</button>
+  </div>`;
+ });
+ document.getElementById("product-list").innerHTML=html;
 }
 
-// CART
-window.addToCart = function(p) {
-    cart.push(p);
-    total += Number(p.price);
-    document.getElementById("cartBox").innerText = "🛒 Cart (" + cart.length + ")";
-}
-
-// CART UI
-window.openCart = function() {
-    document.getElementById("cartPopup").style.display = "block";
-    renderCart();
-}
-window.closeCart = function() {
-    document.getElementById("cartPopup").style.display = "none";
+// ADD CART (WITH QTY)
+window.add=function(p){
+ let item=cart.find(i=>i.id===p.id);
+ if(item){ item.qty++; }
+ else cart.push({...p,qty:1});
+ render();
 }
 
 // RENDER CART
-function renderCart() {
-    let html = "";
-    cart.forEach((item, index) => {
-        html += `
-        <div style="border-bottom:1px solid #ddd; padding:8px;">
-            ${item.name} - ₹${item.price}
-            <button onclick="removeItem(${index})" style="float:right;background:red;">X</button>
-        </div>`;
-    });
-    document.getElementById("cartItems").innerHTML = html;
-    document.getElementById("cartTotal").innerText = "Total: ₹" + total;
+function render(){
+ let html=""; let total=0;
+
+ cart.forEach((i,index)=>{
+  total+=i.price*i.qty;
+  html+=`
+  <div>
+   ${i.name} x${i.qty} = ₹${i.price*i.qty}
+   <button onclick="removeItem(${index})">X</button>
+  </div>`;
+ });
+
+ document.getElementById("cartItems").innerHTML=html;
+ document.getElementById("total").innerText="Total ₹"+total;
+ document.getElementById("cartCount").innerText=cart.length;
 }
 
 // REMOVE
-window.removeItem = function(index) {
-    total -= cart[index].price;
-    cart.splice(index, 1);
-    document.getElementById("cartBox").innerText = "🛒 Cart (" + cart.length + ")";
-    renderCart();
+window.removeItem=function(i){
+ cart.splice(i,1);
+ render();
 }
 
-// SAVE ORDER + INVOICE
-window.saveOrder = async function() {
+// CART OPEN
+window.openCart=()=>document.getElementById("cartPopup").style.display="block";
+window.closeCart=()=>document.getElementById("cartPopup").style.display="none";
 
-    if(cart.length === 0){
-        alert("Cart is empty");
-        return;
-    }
+// PLACE ORDER
+window.placeOrder=async function(){
 
-    let order = {
-        items: cart,
-        total: total,
-        status: "Pending",
-        date: new Date().toLocaleString()
-    };
+ let name=document.getElementById("name").value;
+ let phone=document.getElementById("phone").value;
 
-    let docRef = await addDoc(collection(db, "orders"), order);
+ if(!name||!phone||cart.length==0){
+  alert("Fill details + cart");
+  return;
+ }
 
-    alert("Order Placed ✅ ID: " + docRef.id);
+ let total=cart.reduce((s,i)=>s+i.price*i.qty,0);
 
-    generateInvoice(docRef.id, order);
+ let order={
+  name, phone,
+  items:cart,
+  total,
+  status:"Pending",
+  date:new Date().toLocaleString()
+ };
 
-    cart = [];
-    total = 0;
-    document.getElementById("cartBox").innerText = "🛒 Cart (0)";
-    closeCart();
+ let ref=await addDoc(collection(db,"orders"),order);
+
+ generateInvoice(ref.id,order);
+
+ cart=[];
+ render();
+ closeCart();
 }
 
 // INVOICE
-function generateInvoice(orderId, order) {
-    let html = `
-    <h2>Azad Prime Medico</h2>
-    <p>Order ID: ${orderId}</p>
-    <p>Date: ${order.date}</p>
-    <hr>`;
-    
-    order.items.forEach(i => {
-        html += `<p>${i.name} - ₹${i.price}</p>`;
-    });
+function generateInvoice(id,o){
 
-    html += `<hr><h3>Total: ₹${order.total}</h3><p>Status: ${order.status}</p>`;
+ let html=`
+ <h2>Azad Prime Medico</h2>
+ Order ID: ${id}<br>
+ Name: ${o.name}<br>
+ Phone: ${o.phone}<br><hr>`;
 
-    let win = window.open("");
-    win.document.write(html);
-    win.print();
+ o.items.forEach(i=>{
+  html+=`${i.name} x${i.qty} = ₹${i.price*i.qty}<br>`;
+ });
+
+ html+=`<hr>Total ₹${o.total}<br>Status: ${o.status}`;
+
+ let w=window.open("");
+ w.document.write(html);
+ w.print();
 }
 
 // UPI
-window.payNow = function() {
-    if(total === 0){ alert("Cart empty"); return; }
-    let upi = "upi://pay?pa=gulamhamid164@okaxis&pn=AzadPrimeMedico&am=" + total;
-    window.open(upi);
-}
-
-// WHATSAPP
-window.checkout = function() {
-    let msg = "Order:%0A";
-    cart.forEach(i => msg += i.name + " ₹" + i.price + "%0A");
-    msg += "Total ₹" + total;
-    window.open("https://wa.me/917633801161?text=" + msg);
-}
-
-// PRESCRIPTION
-window.uploadPrescription = function() {
-    window.open("https://wa.me/917633801161?text=Sending prescription");
-}
-
-// SEARCH
-document.getElementById("search").addEventListener("keyup", function() {
-    let val = this.value.toLowerCase();
-    let filtered = allProducts.filter(p => p.name.toLowerCase().includes(val));
-    displayProducts(filtered);
-});
-
-// CATEGORY
-window.filterCategory = function(cat) {
-    if(cat === "all") displayProducts(allProducts);
-    else displayProducts(allProducts.filter(p => p.category === cat));
+window.payNow=function(){
+ let total=cart.reduce((s,i)=>s+i.price*i.qty,0);
+ window.open("upi://pay?pa=gulamhamid164@okaxis&pn=Azad&am="+total);
 }
 
 loadProducts();
 
 </script>
-
 </body>
 </html>
