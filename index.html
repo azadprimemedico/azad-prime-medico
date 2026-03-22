@@ -7,16 +7,14 @@
 <style>
 body { margin:0; font-family:Arial; background:#eef3f8; }
 
-/* HEADER */
 header {
     background:white;
     padding:12px 20px;
     display:flex;
     justify-content:space-between;
     align-items:center;
-    box-shadow:0 2px 5px rgba(0,0,0,0.1);
 }
-.logo img { height:55px; } /* BIGGER LOGO */
+.logo img { height:60px; }
 
 .cartBtn {
     background:#0f9b0f;
@@ -26,44 +24,20 @@ header {
     cursor:pointer;
 }
 
-/* HERO */
 .hero {
     background:linear-gradient(135deg,#0f9b0f,#ff4d4d);
     color:white;
-    padding:40px 20px;
+    padding:40px;
     text-align:center;
 }
-.hero h1 { margin:0; }
 
-/* INPUT */
-.inputs {
-    padding:15px;
-    text-align:center;
-}
+.inputs { padding:10px; text-align:center; }
 .inputs input {
     padding:10px;
     margin:5px;
     width:45%;
-    border-radius:8px;
-    border:1px solid #ccc;
 }
 
-/* OFFERS */
-.offers {
-    display:flex;
-    overflow:auto;
-    padding:10px;
-}
-.offerCard {
-    min-width:220px;
-    background:white;
-    margin:5px;
-    padding:15px;
-    border-radius:10px;
-    box-shadow:0 2px 5px rgba(0,0,0,0.1);
-}
-
-/* PRODUCTS */
 .products {
     display:flex;
     flex-wrap:wrap;
@@ -76,24 +50,8 @@ header {
     padding:10px;
     border-radius:10px;
     text-align:center;
-    box-shadow:0 2px 5px rgba(0,0,0,0.1);
-}
-.card img {
-    width:100%;
-    height:120px;
-    object-fit:cover;
 }
 
-button {
-    background:#ff4d4d;
-    color:white;
-    border:none;
-    padding:8px;
-    margin-top:5px;
-    border-radius:6px;
-}
-
-/* CART */
 #cartPopup {
     display:none;
     position:fixed;
@@ -103,8 +61,6 @@ button {
     height:100%;
     background:white;
     padding:15px;
-    overflow:auto;
-    box-shadow:-3px 0 10px rgba(0,0,0,0.3);
 }
 </style>
 </head>
@@ -113,39 +69,30 @@ button {
 
 <header>
 <div class="logo">
-    <img src="logo.png">
+<img src="logo.png">
 </div>
-<div class="cartBtn" onclick="openCart()">🛒 Cart (<span id="cartCount">0</span>)</div>
+<div class="cartBtn" onclick="openCart()">🛒 (<span id="cartCount">0</span>)</div>
 </header>
 
 <div class="hero">
-<h1>Online Medical Store</h1>
-<p>Fast Delivery | Genuine Medicines</p>
+<h2>Online Medical Store</h2>
 </div>
 
 <div class="inputs">
-<input type="text" id="name" placeholder="Your Name">
-<input type="text" id="phone" placeholder="Mobile Number">
-</div>
-
-<!-- OFFERS -->
-<div class="offers">
-<div class="offerCard">💊 Flat 10% OFF on Medicines</div>
-<div class="offerCard">🚚 Free Delivery above ₹499</div>
-<div class="offerCard">🩺 Upload Prescription & Get Discount</div>
+<input type="text" id="name" placeholder="Name">
+<input type="text" id="phone" placeholder="Phone">
 </div>
 
 <div class="products" id="product-list"></div>
 
-<!-- CART -->
 <div id="cartPopup">
-<h3>Your Cart</h3>
+<h3>Cart</h3>
 <div id="cartItems"></div>
-<h4 id="total">Total ₹0</h4>
+<h4 id="total"></h4>
 
 <button onclick="placeOrder()">Place Order</button>
-<button onclick="payNow()">Pay UPI</button>
-<button onclick="trackOrder()">Track Order</button>
+<button onclick="payNow()">Pay</button>
+<button onclick="trackOrder()">Track</button>
 <button onclick="closeCart()">Close</button>
 </div>
 
@@ -155,20 +102,19 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebas
 import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
 const app = initializeApp({
-  apiKey: "AIzaSyCqpzQlN_qu53CKbPa_XFDnoyN6SgxhKRw",
-  authDomain: "azad-prime-medico.firebaseapp.com",
-  projectId: "azad-prime-medico"
+ apiKey:"AIzaSyCqpzQlN_qu53CKbPa_XFDnoyN6SgxhKRw",
+ authDomain:"azad-prime-medico.firebaseapp.com",
+ projectId:"azad-prime-medico"
 });
 
-const db = getFirestore(app);
+const db=getFirestore(app);
 
-let products = [];
-let cart = [];
+let products=[], cart=[];
 
-/* LOAD PRODUCTS */
+// LOAD
 async function loadProducts(){
- let snap = await getDocs(collection(db,"products"));
- products = [];
+ let snap=await getDocs(collection(db,"products"));
+ products=[];
  snap.forEach(doc=>{
   products.push({id:doc.id,...doc.data(),qty:1});
  });
@@ -180,7 +126,7 @@ function display(data){
  data.forEach(p=>{
   html+=`
   <div class="card">
-   <img src="${p.image}">
+   <img src="${p.image}" width="100%">
    <h4>${p.name}</h4>
    ₹${p.price}
    <button onclick='add(${JSON.stringify(p)})'>Add</button>
@@ -189,21 +135,21 @@ function display(data){
  document.getElementById("product-list").innerHTML=html;
 }
 
-/* CART */
+// CART
 window.add=function(p){
- let item=cart.find(i=>i.id===p.id);
- if(item){ item.qty++; }
- else cart.push({...p,qty:1});
+ let f=cart.find(i=>i.id==p.id);
+ if(f) f.qty++;
+ else cart.push({...p});
  render();
 }
 
 function render(){
- let html=""; let total=0;
+ let html="", total=0;
 
- cart.forEach((i,index)=>{
+ cart.forEach((i,idx)=>{
   total+=i.price*i.qty;
   html+=`${i.name} x${i.qty} = ₹${i.price*i.qty}
-  <button onclick="removeItem(${index})">X</button><br>`;
+  <button onclick="removeItem(${idx})">X</button><br>`;
  });
 
  document.getElementById("cartItems").innerHTML=html;
@@ -211,80 +157,71 @@ function render(){
  document.getElementById("cartCount").innerText=cart.length;
 }
 
-/* REMOVE */
-window.removeItem=function(i){
- cart.splice(i,1);
- render();
-}
+window.removeItem=i=>{ cart.splice(i,1); render(); }
 
-/* CART UI */
-window.openCart=()=>{document.getElementById("cartPopup").style.display="block"; render();}
-window.closeCart=()=>document.getElementById("cartPopup").style.display="none";
+window.openCart=()=>{cartPopup.style.display="block";render();}
+window.closeCart=()=>cartPopup.style.display="none";
 
-/* PLACE ORDER FIXED */
+// ORDER
 window.placeOrder=async function(){
 
- let name=document.getElementById("name").value;
- let phone=document.getElementById("phone").value;
+ let name=nameInput();
+ let phone=phoneInput();
 
- if(!name || !phone || cart.length==0){
-  alert("Enter Name + Phone + Cart");
+ if(!name||!phone||cart.length==0){
+  alert("Fill all");
   return;
  }
 
  let total=cart.reduce((s,i)=>s+i.price*i.qty,0);
 
  let order={
-  name, phone,
+  name,phone,
   items:cart,
   total,
   status:"Pending",
+  payment:"Pending",
   date:new Date().toLocaleString()
  };
 
- let ref = await addDoc(collection(db,"orders"),order);
+ let ref=await addDoc(collection(db,"orders"),order);
 
- alert("Order Placed ✅ ID: "+ref.id);
+ alert("Order ID: "+ref.id);
 
- generateInvoice(ref.id,order);
+ invoice(ref.id,order);
 
  cart=[];
  render();
  closeCart();
 }
 
-/* INVOICE FIXED */
-function generateInvoice(id,o){
+// INPUT FIX
+function nameInput(){ return document.getElementById("name").value; }
+function phoneInput(){ return document.getElementById("phone").value; }
 
- let html=`
- <div style="width:300px">
- <h2>Azad Prime Medico</h2>
- Order ID: ${id}<br>
- Name: ${o.name}<br>
- Phone: ${o.phone}<hr>`;
-
- o.items.forEach(i=>{
-  html+=`${i.name} x${i.qty} = ₹${i.price*i.qty}<br>`;
- });
-
- html+=`<hr>Total ₹${o.total}<br>Status: ${o.status}</div>`;
-
+// INVOICE FIX
+function invoice(id,o){
  let w=window.open("");
- w.document.write(html);
+ w.document.write(`
+ <h2>Azad Prime Medico</h2>
+ ID:${id}<br>
+ ${o.name}<br>${o.phone}<hr>
+ ${o.items.map(i=>i.name+" x"+i.qty).join("<br>")}
+ <hr>Total ₹${o.total}
+ `);
  w.document.close();
- w.print();
 }
 
-/* TRACK ORDER */
-window.trackOrder=function(){
- let phone=document.getElementById("phone").value;
- window.open("orders.html?phone="+phone);
-}
-
-/* UPI */
+// UPI
 window.payNow=function(){
  let total=cart.reduce((s,i)=>s+i.price*i.qty,0);
- window.open("upi://pay?pa=gulamhamid164@okaxis&pn=AzadPrimeMedico&am="+total);
+ window.open("upi://pay?pa=gulamhamid164@okaxis&pn=Azad&am="+total);
+}
+
+// TRACK
+window.trackOrder=function(){
+ let phone=phoneInput();
+ window.open("orders.html?phone="+phone);
 }
 
 loadProducts();
