@@ -25,7 +25,6 @@ header {
     padding:40px 20px;
     text-align:center;
 }
-.hero h1 { margin:0; }
 
 /* INPUT */
 .inputs {
@@ -110,8 +109,8 @@ button {
 </div>
 
 <div class="inputs">
-<input type="text" id="name" placeholder="Your Name">
-<input type="text" id="phone" placeholder="Mobile Number">
+<input type="text" id="custName" placeholder="Your Name">
+<input type="text" id="custPhone" placeholder="Mobile Number">
 </div>
 
 <div class="products" id="product-list"></div>
@@ -142,15 +141,22 @@ const db = getFirestore(app);
 let products = [];
 let cart = [];
 
-// LOAD PRODUCTS
+// LOAD PRODUCTS (FIXED)
 async function loadProducts(){
- let snap = await getDocs(collection(db,"products"));
- snap.forEach(doc=>{
-  products.push({id:doc.id,...doc.data(),qty:1});
- });
- display(products);
+ try{
+   let snap = await getDocs(collection(db,"products"));
+   products = [];
+   snap.forEach(doc=>{
+     products.push({id:doc.id,...doc.data(),qty:1});
+   });
+   display(products);
+ }catch(e){
+   alert("Error loading products ❌");
+   console.error(e);
+ }
 }
 
+// DISPLAY
 function display(data){
  let html="";
  data.forEach(p=>{
@@ -159,28 +165,32 @@ function display(data){
    <img src="${p.image}">
    <h4>${p.name}</h4>
    ₹${p.price}
-   <button onclick='add(${JSON.stringify(p)})'>Add</button>
+   <button onclick='addToCart(${JSON.stringify(p)})'>Add</button>
   </div>`;
  });
  document.getElementById("product-list").innerHTML=html;
 }
 
-// ADD CART
-window.add=function(p){
+// ADD CART (FIXED)
+window.addToCart=function(p){
  let item=cart.find(i=>i.id===p.id);
  if(item){ item.qty++; }
  else cart.push({...p,qty:1});
- render();
+ renderCart();
 }
 
-// RENDER
-function render(){
- let html=""; let total=0;
+// RENDER CART
+function renderCart(){
+ let html=""; 
+ let total=0;
 
  cart.forEach((i,index)=>{
   total+=i.price*i.qty;
-  html+=`${i.name} x${i.qty} = ₹${i.price*i.qty}
-  <button onclick="removeItem(${index})">X</button><br>`;
+  html+=`
+  <div>
+  ${i.name} x${i.qty} = ₹${i.price*i.qty}
+  <button onclick="removeItem(${index})">X</button>
+  </div>`;
  });
 
  document.getElementById("cartItems").innerHTML=html;
@@ -191,21 +201,26 @@ function render(){
 // REMOVE
 window.removeItem=function(i){
  cart.splice(i,1);
- render();
+ renderCart();
 }
 
 // CART UI
-window.openCart=()=>{document.getElementById("cartPopup").style.display="block"; render();}
-window.closeCart=()=>document.getElementById("cartPopup").style.display="none";
+window.openCart=()=>{
+ document.getElementById("cartPopup").style.display="block";
+ renderCart();
+}
+window.closeCart=()=>{
+ document.getElementById("cartPopup").style.display="none";
+}
 
-// PLACE ORDER
+// PLACE ORDER (SAVE FIREBASE + INVOICE)
 window.placeOrder=async function(){
 
- let name=document.getElementById("name").value;
- let phone=document.getElementById("phone").value;
+ let name=document.getElementById("custName").value;
+ let phone=document.getElementById("custPhone").value;
 
- if(!name||!phone||cart.length==0){
-  alert("Enter details + cart");
+ if(!name || !phone || cart.length===0){
+  alert("Enter name, phone & add items");
   return;
  }
 
@@ -226,7 +241,7 @@ window.placeOrder=async function(){
  generateInvoice(ref.id,order);
 
  cart=[];
- render();
+ renderCart();
  closeCart();
 }
 
@@ -251,9 +266,13 @@ function generateInvoice(id,o){
  w.print();
 }
 
-// UPI
+// UPI PAYMENT
 window.payNow=function(){
  let total=cart.reduce((s,i)=>s+i.price*i.qty,0);
+ if(total===0){
+  alert("Cart empty");
+  return;
+ }
  window.open("upi://pay?pa=gulamhamid164@okaxis&pn=AzadPrimeMedico&am="+total);
 }
 
