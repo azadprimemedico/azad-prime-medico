@@ -2,13 +2,47 @@
 <html>
 <head>
 <title>My Orders</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body { font-family:Arial; background:#f4f6f9; padding:10px; }
+
+.order {
+    background:white;
+    margin:10px;
+    padding:15px;
+    border-radius:10px;
+}
+
+.status {
+    margin-top:10px;
+    padding:10px;
+    border-radius:8px;
+    font-weight:bold;
+    text-align:center;
+}
+
+/* STATUS COLORS */
+.Pending { background:#ffeeba; }
+.Packed { background:#bee5eb; }
+.Out { background:#c3e6cb; }
+.Delivered { background:#d4edda; }
+
+.timeline {
+    margin-top:10px;
+    font-size:14px;
+    line-height:22px;
+}
+</style>
 </head>
+
 <body>
 
-<h2>My Orders</h2>
+<h2>📦 My Orders</h2>
 <div id="orders"></div>
 
 <script type="module">
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
 import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
@@ -20,22 +54,50 @@ const app = initializeApp({
 
 const db = getFirestore(app);
 
+let phone = localStorage.getItem("custPhone");
+
+// LOAD ORDERS
 async function load(){
+
  let snap = await getDocs(collection(db,"orders"));
  let html="";
+
  snap.forEach(doc=>{
-  let o=doc.data();
-  html+=`
-  <div>
-  <b>ID:</b> ${doc.id}<br>
-  Status: ${o.status}<br>
-  Total: ₹${o.total}
-  </div><hr>`;
+  let o = doc.data();
+
+  // ✅ ONLY USER ORDERS
+  if(o.phone === phone){
+
+    let statusClass = o.status.replace(" ", "");
+
+    html += `
+    <div class="order">
+
+    <b>Order ID:</b> ${doc.id}<br>
+    <b>Date:</b> ${o.date}<br>
+    <b>Total:</b> ₹${o.total}<br>
+
+    <div class="status ${statusClass}">
+        ${o.status}
+    </div>
+
+    <div class="timeline">
+        ✔ Order Placed<br>
+        ${o.status !== "Pending" ? "✔ Packed<br>" : ""}
+        ${o.status === "Out for Delivery" || o.status === "Delivered" ? "✔ Out for Delivery<br>" : ""}
+        ${o.status === "Delivered" ? "✔ Delivered" : ""}
+    </div>
+
+    </div>`;
+  }
+
  });
- document.getElementById("orders").innerHTML=html;
+
+ document.getElementById("orders").innerHTML = html || "<p>No Orders Found</p>";
 }
 
 load();
+
 </script>
 
 </body>
