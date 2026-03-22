@@ -1,229 +1,51 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Azad Prime Medico</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<style>
-body { margin:0; font-family:Arial; background:#f4f6f9; }
-
-/* HEADER */
-header {
-    background:white;
-    padding:10px 20px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-}
-.logo img { height:60px; }  /* BIGGER LOGO */
-
-/* HERO */
-.hero {
-    background: linear-gradient(135deg, #0f9b0f, #ff0000);
-    color:white;
-    padding:40px;
-    text-align:center;
-}
-
-/* INPUT */
-.inputs input {
-    width:45%;
-    padding:10px;
-    margin:5px;
-}
-
-/* PRODUCT */
-.products { display:flex; flex-wrap:wrap; justify-content:center; }
-.card {
-    background:white;
-    margin:10px;
-    padding:10px;
-    width:170px;
-    border-radius:10px;
-}
-.card img { width:100%; height:120px; object-fit:cover; }
-
-button {
-    background:red;
-    color:white;
-    border:none;
-    padding:8px;
-    margin-top:5px;
-    width:100%;
-}
-
-/* CART */
-#cartPopup {
-    display:none;
-    position:fixed;
-    right:0;
-    top:0;
-    width:320px;
-    height:100%;
-    background:white;
-    padding:15px;
-    overflow:auto;
-}
-</style>
+<title>Track Orders</title>
 </head>
-
 <body>
 
-<header>
-<div class="logo">
-<img src="logo.png">
-</div>
-<div onclick="openCart()">🛒 (<span id="cartCount">0</span>)</div>
-</header>
-
-<div class="hero">
-<h1>Online Medical Store</h1>
-<p>Fast Delivery | Genuine Medicines</p>
-</div>
-
-<div class="inputs">
-<input id="name" placeholder="Name">
-<input id="phone" placeholder="Phone">
-</div>
-
-<div class="products" id="product-list"></div>
-
-<!-- CART -->
-<div id="cartPopup">
-<h3>Cart</h3>
-<div id="cartItems"></div>
-<h4 id="total">₹0</h4>
-
-<button onclick="placeOrder()">Place Order</button>
-<button onclick="payNow()">Pay UPI</button>
-<button onclick="closeCart()">Close</button>
-</div>
+<h2>My Orders</h2>
+<div id="orders"></div>
 
 <script type="module">
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
 const app = initializeApp({
- apiKey:"AIzaSyCqpzQlN_qu53CKbPa_XFDnoyN6SgxhKRw",
- authDomain:"azad-prime-medico.firebaseapp.com",
- projectId:"azad-prime-medico"
+  apiKey: "AIzaSyCqpzQlN_qu53CKbPa_XFDnoyN6SgxhKRw",
+  authDomain: "azad-prime-medico.firebaseapp.com",
+  projectId: "azad-prime-medico"
 });
 
-const db=getFirestore(app);
+const db = getFirestore(app);
 
-let products=[];
-let cart=[];
+let urlParams = new URLSearchParams(window.location.search);
+let phone = urlParams.get("phone");
 
-// LOAD PRODUCTS
-async function loadProducts(){
- let snap=await getDocs(collection(db,"products"));
- snap.forEach(doc=>{
-  products.push({id:doc.id,...doc.data(),qty:1});
- });
- display(products);
-}
-
-// DISPLAY
-function display(data){
+async function loadOrders(){
+ let snap = await getDocs(collection(db,"orders"));
  let html="";
- data.forEach(p=>{
-  html+=`
-  <div class="card">
-   <img src="${p.image}">
-   <h4>${p.name}</h4>
-   ₹${p.price}
-   <button onclick='add(${JSON.stringify(p)})'>Add</button>
-  </div>`;
- });
- document.getElementById("product-list").innerHTML=html;
-}
 
-// ADD
-window.add=function(p){
- let item=cart.find(i=>i.id===p.id);
- if(item) item.qty++;
- else cart.push({...p,qty:1});
- render();
-}
+ snap.forEach(doc=>{
+  let o=doc.data();
 
-// RENDER
-function render(){
- let html=""; let total=0;
- cart.forEach((i,index)=>{
-  total+=i.price*i.qty;
-  html+=`${i.name} x${i.qty} = ₹${i.price*i.qty}
-  <button onclick="removeItem(${index})">X</button><br>`;
- });
- document.getElementById("cartItems").innerHTML=html;
- document.getElementById("total").innerText="₹"+total;
- document.getElementById("cartCount").innerText=cart.length;
-}
-
-// REMOVE
-window.removeItem=i=>{ cart.splice(i,1); render(); }
-
-// CART UI
-window.openCart=()=>{cartPopup.style.display="block"; render();}
-window.closeCart=()=>cartPopup.style.display="none";
-
-// PLACE ORDER (FIXED)
-window.placeOrder=async function(){
-
- let name=document.getElementById("name").value;
- let phone=document.getElementById("phone").value;
-
- if(!name||!phone||cart.length==0){
-  alert("Fill all details");
-  return;
- }
-
- let total=cart.reduce((s,i)=>s+i.price*i.qty,0);
-
- let order={
-  name, phone,
-  items:cart,
-  total,
-  status:"Pending",
-  date:new Date().toLocaleString()
- };
-
- let ref=await addDoc(collection(db,"orders"),order);
-
- alert("Order Placed ✅ ID: "+ref.id);
-
- generateInvoice(ref.id,order);
-
- cart=[];
- render();
- closeCart();
-}
-
-// INVOICE (FIXED)
-function generateInvoice(id,o){
-
- let html=`<h2>Azad Prime Medico</h2>
- Order ID: ${id}<br>
- Name: ${o.name}<br>
- Phone: ${o.phone}<hr>`;
-
- o.items.forEach(i=>{
-  html+=`${i.name} x${i.qty} = ₹${i.price*i.qty}<br>`;
+  if(o.phone == phone){
+    html+=`
+    <div style="border:1px solid #ccc; padding:10px; margin:10px;">
+      <b>Order ID:</b> ${doc.id}<br>
+      <b>Status:</b> ${o.status}<br>
+      <b>Total:</b> ₹${o.total}
+    </div>`;
+  }
  });
 
- html+=`<hr>Total ₹${o.total}<br>Status: ${o.status}`;
-
- let w=window.open("");
- w.document.write(html);
- w.print();
+ document.getElementById("orders").innerHTML=html;
 }
 
-// UPI
-window.payNow=function(){
- let total=cart.reduce((s,i)=>s+i.price*i.qty,0);
- window.open("upi://pay?pa=gulamhamid164@okaxis&pn=AzadPrimeMedico&am="+total);
-}
+loadOrders();
 
-loadProducts();
 </script>
 
 </body>
