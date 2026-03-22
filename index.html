@@ -5,51 +5,92 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-body { margin:0; font-family:Arial; background:#f4f6f9; }
+body { margin:0; font-family:Arial; background:#eef3f8; }
 
 /* HEADER */
 header {
     background:white;
-    padding:10px 20px;
+    padding:12px 20px;
     display:flex;
     justify-content:space-between;
     align-items:center;
+    box-shadow:0 2px 5px rgba(0,0,0,0.1);
 }
-.logo img { height:60px; }  /* BIGGER LOGO */
+.logo img { height:55px; } /* BIGGER LOGO */
+
+.cartBtn {
+    background:#0f9b0f;
+    color:white;
+    padding:8px 15px;
+    border-radius:20px;
+    cursor:pointer;
+}
 
 /* HERO */
 .hero {
-    background: linear-gradient(135deg, #0f9b0f, #ff0000);
+    background:linear-gradient(135deg,#0f9b0f,#ff4d4d);
     color:white;
-    padding:40px;
+    padding:40px 20px;
     text-align:center;
 }
+.hero h1 { margin:0; }
 
 /* INPUT */
+.inputs {
+    padding:15px;
+    text-align:center;
+}
 .inputs input {
-    width:45%;
     padding:10px;
     margin:5px;
+    width:45%;
+    border-radius:8px;
+    border:1px solid #ccc;
 }
 
-/* PRODUCT */
-.products { display:flex; flex-wrap:wrap; justify-content:center; }
+/* OFFERS */
+.offers {
+    display:flex;
+    overflow:auto;
+    padding:10px;
+}
+.offerCard {
+    min-width:220px;
+    background:white;
+    margin:5px;
+    padding:15px;
+    border-radius:10px;
+    box-shadow:0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* PRODUCTS */
+.products {
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+}
 .card {
     background:white;
+    width:170px;
     margin:10px;
     padding:10px;
-    width:170px;
     border-radius:10px;
+    text-align:center;
+    box-shadow:0 2px 5px rgba(0,0,0,0.1);
 }
-.card img { width:100%; height:120px; object-fit:cover; }
+.card img {
+    width:100%;
+    height:120px;
+    object-fit:cover;
+}
 
 button {
-    background:red;
+    background:#ff4d4d;
     color:white;
     border:none;
     padding:8px;
     margin-top:5px;
-    width:100%;
+    border-radius:6px;
 }
 
 /* CART */
@@ -63,6 +104,7 @@ button {
     background:white;
     padding:15px;
     overflow:auto;
+    box-shadow:-3px 0 10px rgba(0,0,0,0.3);
 }
 </style>
 </head>
@@ -71,9 +113,9 @@ button {
 
 <header>
 <div class="logo">
-<img src="logo.png">
+    <img src="logo.png">
 </div>
-<div onclick="openCart()">🛒 (<span id="cartCount">0</span>)</div>
+<div class="cartBtn" onclick="openCart()">🛒 Cart (<span id="cartCount">0</span>)</div>
 </header>
 
 <div class="hero">
@@ -82,48 +124,57 @@ button {
 </div>
 
 <div class="inputs">
-<input id="name" placeholder="Name">
-<input id="phone" placeholder="Phone">
+<input type="text" id="name" placeholder="Your Name">
+<input type="text" id="phone" placeholder="Mobile Number">
+</div>
+
+<!-- OFFERS -->
+<div class="offers">
+<div class="offerCard">💊 Flat 10% OFF on Medicines</div>
+<div class="offerCard">🚚 Free Delivery above ₹499</div>
+<div class="offerCard">🩺 Upload Prescription & Get Discount</div>
 </div>
 
 <div class="products" id="product-list"></div>
 
 <!-- CART -->
 <div id="cartPopup">
-<h3>Cart</h3>
+<h3>Your Cart</h3>
 <div id="cartItems"></div>
-<h4 id="total">₹0</h4>
+<h4 id="total">Total ₹0</h4>
 
 <button onclick="placeOrder()">Place Order</button>
 <button onclick="payNow()">Pay UPI</button>
+<button onclick="trackOrder()">Track Order</button>
 <button onclick="closeCart()">Close</button>
 </div>
 
 <script type="module">
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
 import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
 const app = initializeApp({
- apiKey:"AIzaSyCqpzQlN_qu53CKbPa_XFDnoyN6SgxhKRw",
- authDomain:"azad-prime-medico.firebaseapp.com",
- projectId:"azad-prime-medico"
+  apiKey: "AIzaSyCqpzQlN_qu53CKbPa_XFDnoyN6SgxhKRw",
+  authDomain: "azad-prime-medico.firebaseapp.com",
+  projectId: "azad-prime-medico"
 });
 
-const db=getFirestore(app);
+const db = getFirestore(app);
 
-let products=[];
-let cart=[];
+let products = [];
+let cart = [];
 
-// LOAD PRODUCTS
+/* LOAD PRODUCTS */
 async function loadProducts(){
- let snap=await getDocs(collection(db,"products"));
+ let snap = await getDocs(collection(db,"products"));
+ products = [];
  snap.forEach(doc=>{
   products.push({id:doc.id,...doc.data(),qty:1});
  });
  display(products);
 }
 
-// DISPLAY
 function display(data){
  let html="";
  data.forEach(p=>{
@@ -138,42 +189,46 @@ function display(data){
  document.getElementById("product-list").innerHTML=html;
 }
 
-// ADD
+/* CART */
 window.add=function(p){
  let item=cart.find(i=>i.id===p.id);
- if(item) item.qty++;
+ if(item){ item.qty++; }
  else cart.push({...p,qty:1});
  render();
 }
 
-// RENDER
 function render(){
  let html=""; let total=0;
+
  cart.forEach((i,index)=>{
   total+=i.price*i.qty;
   html+=`${i.name} x${i.qty} = ₹${i.price*i.qty}
   <button onclick="removeItem(${index})">X</button><br>`;
  });
+
  document.getElementById("cartItems").innerHTML=html;
- document.getElementById("total").innerText="₹"+total;
+ document.getElementById("total").innerText="Total ₹"+total;
  document.getElementById("cartCount").innerText=cart.length;
 }
 
-// REMOVE
-window.removeItem=i=>{ cart.splice(i,1); render(); }
+/* REMOVE */
+window.removeItem=function(i){
+ cart.splice(i,1);
+ render();
+}
 
-// CART UI
-window.openCart=()=>{cartPopup.style.display="block"; render();}
-window.closeCart=()=>cartPopup.style.display="none";
+/* CART UI */
+window.openCart=()=>{document.getElementById("cartPopup").style.display="block"; render();}
+window.closeCart=()=>document.getElementById("cartPopup").style.display="none";
 
-// PLACE ORDER (FIXED)
+/* PLACE ORDER FIXED */
 window.placeOrder=async function(){
 
  let name=document.getElementById("name").value;
  let phone=document.getElementById("phone").value;
 
- if(!name||!phone||cart.length==0){
-  alert("Fill all details");
+ if(!name || !phone || cart.length==0){
+  alert("Enter Name + Phone + Cart");
   return;
  }
 
@@ -187,7 +242,7 @@ window.placeOrder=async function(){
   date:new Date().toLocaleString()
  };
 
- let ref=await addDoc(collection(db,"orders"),order);
+ let ref = await addDoc(collection(db,"orders"),order);
 
  alert("Order Placed ✅ ID: "+ref.id);
 
@@ -198,10 +253,12 @@ window.placeOrder=async function(){
  closeCart();
 }
 
-// INVOICE (FIXED)
+/* INVOICE FIXED */
 function generateInvoice(id,o){
 
- let html=`<h2>Azad Prime Medico</h2>
+ let html=`
+ <div style="width:300px">
+ <h2>Azad Prime Medico</h2>
  Order ID: ${id}<br>
  Name: ${o.name}<br>
  Phone: ${o.phone}<hr>`;
@@ -210,20 +267,28 @@ function generateInvoice(id,o){
   html+=`${i.name} x${i.qty} = ₹${i.price*i.qty}<br>`;
  });
 
- html+=`<hr>Total ₹${o.total}<br>Status: ${o.status}`;
+ html+=`<hr>Total ₹${o.total}<br>Status: ${o.status}</div>`;
 
  let w=window.open("");
  w.document.write(html);
+ w.document.close();
  w.print();
 }
 
-// UPI
+/* TRACK ORDER */
+window.trackOrder=function(){
+ let phone=document.getElementById("phone").value;
+ window.open("orders.html?phone="+phone);
+}
+
+/* UPI */
 window.payNow=function(){
  let total=cart.reduce((s,i)=>s+i.price*i.qty,0);
  window.open("upi://pay?pa=gulamhamid164@okaxis&pn=AzadPrimeMedico&am="+total);
 }
 
 loadProducts();
+
 </script>
 
 </body>
