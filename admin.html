@@ -12,7 +12,7 @@
 body { font-family: Arial; background:#f5f5f5; padding:20px; }
 
 .box {
-    max-width:400px;
+    max-width:500px;
     margin:auto;
     background:white;
     padding:20px;
@@ -33,6 +33,17 @@ button {
     color:white;
     border:none;
     margin-top:5px;
+    cursor:pointer;
+}
+
+.logout { background:red; }
+
+.card {
+    background:white;
+    margin:10px;
+    padding:10px;
+    border-radius:8px;
+    text-align:center;
 }
 
 #adminPanel { display:none; }
@@ -41,6 +52,7 @@ button {
 
 <body>
 
+<!-- LOGIN -->
 <div class="box" id="loginBox">
 <h2>Admin Login</h2>
 <input type="email" id="email" placeholder="Email">
@@ -48,24 +60,32 @@ button {
 <button onclick="login()">Login</button>
 </div>
 
-<div class="box" id="adminPanel">
-<h2>Add / Edit Product</h2>
+<!-- ADMIN PANEL -->
+<div id="adminPanel">
+
+<div class="box">
+<h2>Product Management</h2>
+
 <input type="text" id="name" placeholder="Product Name">
 <input type="number" id="price" placeholder="Price">
-<input type="text" id="category" placeholder="Category (tablet/syrup/vitamin)">
+<input type="text" id="category" placeholder="Category">
 <input type="text" id="image" placeholder="Image URL">
+
 <button onclick="addProduct()">Save Product</button>
+<button class="logout" onclick="logout()">Logout</button>
 
 <h3>Bulk Upload</h3>
-<textarea id="bulkData" placeholder="Example:
-Dolo 650,30,tablet,https://image-url
-Crocin,25,tablet,https://image-url"></textarea>
-
-<button onclick="bulkUpload()">Upload Bulk Products</button>
+<textarea id="bulkData" placeholder="Name,Price,Category,ImageURL"></textarea>
+<button onclick="bulkUpload()">Upload Bulk</button>
 </div>
 
-<h3 style="text-align:center;">All Products</h3>
+<h3 style="text-align:center;">Products</h3>
 <div id="productList"></div>
+
+<h3 style="text-align:center;">Orders</h3>
+<div id="orderList"></div>
+
+</div>
 
 <script>
 const firebaseConfig = {
@@ -83,23 +103,29 @@ let editId = null;
 
 // LOGIN
 function login() {
-    let email = document.getElementById("email").value;
-    let password = document.getElementById("password").value;
+    let email = email.value;
+    let password = password.value;
 
     auth.signInWithEmailAndPassword(email, password)
     .then(() => alert("Login Successful ✅"))
     .catch(() => alert("Login Failed ❌"));
 }
 
+// LOGOUT
+function logout(){
+    auth.signOut();
+}
+
 // AUTH CHECK
-auth.onAuthStateChanged(function(user) {
+auth.onAuthStateChanged(user => {
     if (user) {
-        document.getElementById("loginBox").style.display = "none";
-        document.getElementById("adminPanel").style.display = "block";
+        loginBox.style.display = "none";
+        adminPanel.style.display = "block";
         loadProducts();
+        loadOrders();
     } else {
-        document.getElementById("loginBox").style.display = "block";
-        document.getElementById("adminPanel").style.display = "none";
+        loginBox.style.display = "block";
+        adminPanel.style.display = "none";
     }
 });
 
@@ -117,48 +143,36 @@ function addProduct() {
     }
 
     if (editId) {
-        db.collection("products").doc(editId).update({
-            name, price, category, image
-        }).then(() => {
-            alert("Updated ✅");
-            editId = null;
-            loadProducts();
-        });
+        db.collection("products").doc(editId).update({ name, price, category, image })
+        .then(() => { alert("Updated ✅"); editId=null; loadProducts(); });
     } else {
-        db.collection("products").add({
-            name, price, category, image
-        }).then(() => {
-            alert("Added ✅");
-            loadProducts();
-        });
+        db.collection("products").add({ name, price, category, image })
+        .then(() => { alert("Added ✅"); loadProducts(); });
     }
 
-    document.getElementById("name").value = "";
-    document.getElementById("price").value = "";
-    document.getElementById("category").value = "";
-    document.getElementById("image").value = "";
+    document.querySelectorAll("input").forEach(i => i.value = "");
 }
 
 // LOAD PRODUCTS
 function loadProducts() {
-    db.collection("products").get().then((snapshot) => {
+    db.collection("products").get().then(snapshot => {
         let html = "";
 
-        snapshot.forEach((doc) => {
+        snapshot.forEach(doc => {
             let p = doc.data();
 
             html += `
-            <div style="background:white;margin:10px;padding:10px;border-radius:8px;text-align:center;">
+            <div class="card">
                 <img src="${p.image}" width="100"><br>
                 <b>${p.name}</b><br>
                 ₹${p.price}<br>
-                <small>${p.category}</small><br>
+                ${p.category}<br>
                 <button onclick="editProduct('${doc.id}','${p.name}','${p.price}','${p.category}','${p.image}')">Edit</button>
                 <button onclick="deleteProduct('${doc.id}')">Delete</button>
             </div>`;
         });
 
-        document.getElementById("productList").innerHTML = html;
+        productList.innerHTML = html;
     });
 }
 
@@ -174,38 +188,67 @@ function editProduct(id, name, price, category, image) {
 // DELETE
 function deleteProduct(id) {
     db.collection("products").doc(id).delete()
-    .then(() => {
-        alert("Deleted ✅");
-        loadProducts();
-    });
+    .then(() => { alert("Deleted ✅"); loadProducts(); });
 }
 
 // BULK UPLOAD
-function bulkUpload() {
+async function bulkUpload() {
 
     let data = document.getElementById("bulkData").value.trim();
-    if (!data) {
-        alert("Paste data first");
-        return;
-    }
+    if (!data) return alert("Paste data");
 
     let lines = data.split("\n");
 
-    lines.forEach(line => {
-        let parts = line.split(",");
-        if (parts.length < 4) return;
+    for (let line of lines) {
+        let [name, price, category, image] = line.split(",");
 
-        db.collection("products").add({
-            name: parts[0].trim(),
-            price: parseFloat(parts[1]),
-            category: parts[2].trim(),
-            image: parts[3].trim()
+        if (!name) continue;
+
+        await db.collection("products").add({
+            name: name.trim(),
+            price: parseFloat(price),
+            category: category.trim(),
+            image: image.trim()
         });
-    });
+    }
 
     alert("Bulk Upload Done ✅");
-    document.getElementById("bulkData").value = "";
+    bulkData.value="";
     loadProducts();
+}
+
+// LOAD ORDERS
+function loadOrders(){
+    db.collection("orders").get().then(snapshot => {
+        let html="";
+
+        snapshot.forEach(doc=>{
+            let o=doc.data();
+
+            html+=`
+            <div class="card">
+            <b>ID:</b> ${doc.id}<br>
+            <b>Name:</b> ${o.name || ""}<br>
+            <b>Phone:</b> ${o.phone}<br>
+            <b>Total:</b> ₹${o.total}<br>
+
+            <select onchange="updateStatus('${doc.id}', this.value)">
+                <option ${o.status=="Pending"?"selected":""}>Pending</option>
+                <option ${o.status=="Packed"?"selected":""}>Packed</option>
+                <option ${o.status=="Out for Delivery"?"selected":""}>Out for Delivery</option>
+                <option ${o.status=="Delivered"?"selected":""}>Delivered</option>
+            </select>
+            </div>`;
+        });
+
+        orderList.innerHTML=html;
+    });
+}
+
+// UPDATE STATUS
+function updateStatus(id,status){
+    db.collection("orders").doc(id).update({status})
+    .then(()=>{ alert("Updated ✅"); loadOrders(); });
 }
 </script>
 
