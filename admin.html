@@ -88,7 +88,20 @@ button {
 
 </div>
 
-<script>
+
+
+// ✅ LOGIN FIXED
+function login() {
+    let emailVal = document.getElementById("email").value;
+    let passwordVal = document.getElementById("password").value;
+
+    auth.signInWithEmailAndPassword(emailVal, passwordVal)
+    .then(() => alert("Login Successful ✅"))
+    .catch((err) => alert("Login Failed ❌ " + err.message));
+}
+
+// LOGOUT
+function logout(){<script>
 const firebaseConfig = {
   apiKey: "AIzaSyCqpzQlN_qu53CKbPa_XFDnoyN6SgxhKRw",
   authDomain: "azad-prime-medico.firebaseapp.com",
@@ -102,18 +115,12 @@ const auth = firebase.auth();
 
 let editId = null;
 
-// ✅ LOGIN FIXED
+// 🔐 LOGIN
 function login() {
-    let emailVal = document.getElementById("email").value;
-    let passwordVal = document.getElementById("password").value;
+    let emailVal = document.getElementById("email").value.trim();
+    let passwordVal = document.getElementById("password").value.trim();
 
-    auth.signInWithEmailAndPassword(emailVal, passwordVal)
-    .then(() => alert("Login Successful ✅"))
-    .catch((err) => alert("Login Failed ❌ " + err.message));
-}
-
-// LOGOUT
-function logout(){
+    if(!
     auth.signOut();
 }
 
