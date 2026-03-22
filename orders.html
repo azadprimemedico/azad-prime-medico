@@ -6,6 +6,9 @@
 <body>
 
 <h2>My Orders</h2>
+<input type="text" id="phone" placeholder="Enter Phone">
+<button onclick="loadOrders()">Load</button>
+
 <div id="orders"></div>
 
 <script type="module">
@@ -13,37 +16,38 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
 import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "YOUR_KEY",
-  authDomain: "YOUR_DOMAIN",
+const app = initializeApp({
+  apiKey: "AIzaSyCqpzQlN_qu53CKbPa_XFDnoyN6SgxhKRw",
+  authDomain: "azad-prime-medico.firebaseapp.com",
   projectId: "azad-prime-medico"
-};
+});
 
-const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-async function loadOrders() {
-    let snapshot = await getDocs(collection(db, "orders"));
+window.loadOrders = async function(){
 
-    let html = "";
+ let phone=document.getElementById("phone").value;
+ let snap=await getDocs(collection(db,"orders"));
 
-    snapshot.forEach(doc => {
-        let o = doc.data();
+ let html="";
 
-        html += `
-        <div style="border:1px solid #ccc; margin:10px; padding:10px;">
-            <b>Order ID:</b> ${doc.id}<br>
-            <b>Status:</b> ${o.status}<br>
-            <b>Total:</b> ₹${o.total}
-        </div>`;
-    });
+ snap.forEach(doc=>{
+  let o=doc.data();
 
-    document.getElementById("orders").innerHTML = html;
+  if(o.phone===phone){
+    html+=`
+    <div style="border:1px solid #ccc; padding:10px; margin:10px;">
+    <b>ID:</b> ${doc.id}<br>
+    <b>Status:</b> ${o.status}<br>
+    <b>Total:</b> ₹${o.total}<br>
+    <b>Date:</b> ${o.date}
+    </div>`;
+  }
+ });
+
+ document.getElementById("orders").innerHTML=html;
 }
 
-loadOrders();
-
 </script>
-
 </body>
 </html>
