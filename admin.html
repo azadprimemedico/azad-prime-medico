@@ -20,7 +20,7 @@ body { font-family: Arial; background:#f5f5f5; padding:20px; }
     margin-bottom:20px;
 }
 
-input, textarea {
+input, textarea, select {
     width:100%;
     padding:10px;
     margin:10px 0;
@@ -41,9 +41,10 @@ button {
 .card {
     background:white;
     margin:10px;
-    padding:10px;
-    border-radius:8px;
+    padding:15px;
+    border-radius:10px;
     text-align:center;
+    box-shadow:0 2px 5px rgba(0,0,0,0.1);
 }
 
 #adminPanel { display:none; }
@@ -68,7 +69,7 @@ button {
 
 <input type="text" id="name" placeholder="Product Name">
 <input type="number" id="price" placeholder="Price">
-<input type="text" id="category" placeholder="Category">
+<input type="text" id="category" placeholder="Category (tablet/syrup/vitamin)">
 <input type="text" id="image" placeholder="Image URL">
 
 <button onclick="addProduct()">Save Product</button>
@@ -101,14 +102,14 @@ const auth = firebase.auth();
 
 let editId = null;
 
-// LOGIN
+// ✅ LOGIN FIXED
 function login() {
-    let email = email.value;
-    let password = password.value;
+    let emailVal = document.getElementById("email").value;
+    let passwordVal = document.getElementById("password").value;
 
-    auth.signInWithEmailAndPassword(email, password)
+    auth.signInWithEmailAndPassword(emailVal, passwordVal)
     .then(() => alert("Login Successful ✅"))
-    .catch(() => alert("Login Failed ❌"));
+    .catch((err) => alert("Login Failed ❌ " + err.message));
 }
 
 // LOGOUT
@@ -119,23 +120,23 @@ function logout(){
 // AUTH CHECK
 auth.onAuthStateChanged(user => {
     if (user) {
-        loginBox.style.display = "none";
-        adminPanel.style.display = "block";
+        document.getElementById("loginBox").style.display = "none";
+        document.getElementById("adminPanel").style.display = "block";
         loadProducts();
         loadOrders();
     } else {
-        loginBox.style.display = "block";
-        adminPanel.style.display = "none";
+        document.getElementById("loginBox").style.display = "block";
+        document.getElementById("adminPanel").style.display = "none";
     }
 });
 
 // ADD / UPDATE PRODUCT
 function addProduct() {
 
-    let name = document.getElementById("name").value;
+    let name = document.getElementById("name").value.trim();
     let price = parseFloat(document.getElementById("price").value);
-    let category = document.getElementById("category").value;
-    let image = document.getElementById("image").value;
+    let category = document.getElementById("category").value.trim();
+    let image = document.getElementById("image").value.trim();
 
     if (!name || !price || !category || !image) {
         alert("Fill all fields");
@@ -144,13 +145,24 @@ function addProduct() {
 
     if (editId) {
         db.collection("products").doc(editId).update({ name, price, category, image })
-        .then(() => { alert("Updated ✅"); editId=null; loadProducts(); });
+        .then(() => {
+            alert("Updated ✅");
+            editId = null;
+            loadProducts();
+        });
     } else {
         db.collection("products").add({ name, price, category, image })
-        .then(() => { alert("Added ✅"); loadProducts(); });
+        .then(() => {
+            alert("Added ✅");
+            loadProducts();
+        });
     }
 
-    document.querySelectorAll("input").forEach(i => i.value = "");
+    // ✅ FIXED INPUT RESET
+    document.getElementById("name").value = "";
+    document.getElementById("price").value = "";
+    document.getElementById("category").value = "";
+    document.getElementById("image").value = "";
 }
 
 // LOAD PRODUCTS
@@ -166,13 +178,14 @@ function loadProducts() {
                 <img src="${p.image}" width="100"><br>
                 <b>${p.name}</b><br>
                 ₹${p.price}<br>
-                ${p.category}<br>
+                <small>${p.category}</small><br><br>
+
                 <button onclick="editProduct('${doc.id}','${p.name}','${p.price}','${p.category}','${p.image}')">Edit</button>
                 <button onclick="deleteProduct('${doc.id}')">Delete</button>
             </div>`;
         });
 
-        productList.innerHTML = html;
+        document.getElementById("productList").innerHTML = html;
     });
 }
 
@@ -187,8 +200,13 @@ function editProduct(id, name, price, category, image) {
 
 // DELETE
 function deleteProduct(id) {
-    db.collection("products").doc(id).delete()
-    .then(() => { alert("Deleted ✅"); loadProducts(); });
+    if(confirm("Delete this product?")){
+        db.collection("products").doc(id).delete()
+        .then(() => {
+            alert("Deleted ✅");
+            loadProducts();
+        });
+    }
 }
 
 // BULK UPLOAD
@@ -200,20 +218,19 @@ async function bulkUpload() {
     let lines = data.split("\n");
 
     for (let line of lines) {
-        let [name, price, category, image] = line.split(",");
-
-        if (!name) continue;
+        let parts = line.split(",");
+        if (parts.length < 4) continue;
 
         await db.collection("products").add({
-            name: name.trim(),
-            price: parseFloat(price),
-            category: category.trim(),
-            image: image.trim()
+            name: parts[0].trim(),
+            price: parseFloat(parts[1]),
+            category: parts[2].trim(),
+            image: parts[3].trim()
         });
     }
 
     alert("Bulk Upload Done ✅");
-    bulkData.value="";
+    document.getElementById("bulkData").value="";
     loadProducts();
 }
 
@@ -227,11 +244,12 @@ function loadOrders(){
 
             html+=`
             <div class="card">
-            <b>ID:</b> ${doc.id}<br>
-            <b>Name:</b> ${o.name || ""}<br>
-            <b>Phone:</b> ${o.phone}<br>
-            <b>Total:</b> ₹${o.total}<br>
+            <b>Order ID:</b> ${doc.id}<br>
+            <b>Name:</b> ${o.name || "N/A"}<br>
+            <b>Phone:</b> ${o.phone || "N/A"}<br>
+            <b>Total:</b> ₹${o.total}<br><br>
 
+            <b>Status:</b>
             <select onchange="updateStatus('${doc.id}', this.value)">
                 <option ${o.status=="Pending"?"selected":""}>Pending</option>
                 <option ${o.status=="Packed"?"selected":""}>Packed</option>
@@ -241,14 +259,17 @@ function loadOrders(){
             </div>`;
         });
 
-        orderList.innerHTML=html;
+        document.getElementById("orderList").innerHTML=html;
     });
 }
 
 // UPDATE STATUS
 function updateStatus(id,status){
     db.collection("orders").doc(id).update({status})
-    .then(()=>{ alert("Updated ✅"); loadOrders(); });
+    .then(()=>{
+        alert("Status Updated ✅");
+        loadOrders();
+    });
 }
 </script>
 
