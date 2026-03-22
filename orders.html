@@ -3,13 +3,10 @@
 <head>
 <title>My Orders</title>
 </head>
+
 <body>
 
-<h2>Track Your Orders</h2>
-
-<input type="text" id="phone" placeholder="Enter Mobile Number">
-<button onclick="loadOrders()">Check Orders</button>
-
+<h2>My Orders</h2>
 <div id="orders"></div>
 
 <script type="module">
@@ -25,29 +22,26 @@ const app = initializeApp({
 
 const db = getFirestore(app);
 
-window.loadOrders = async function(){
-
- let phone=document.getElementById("phone").value;
+async function loadOrders(){
  let snap=await getDocs(collection(db,"orders"));
-
  let html="";
 
  snap.forEach(doc=>{
-  let o=doc.data();
+ let o=doc.data();
 
-  if(o.phone===phone){
-    html+=`
-    <div style="border:1px solid #ccc; padding:10px; margin:10px;">
-    <b>ID:</b> ${doc.id}<br>
-    <b>Status:</b> ${o.status}<br>
-    <b>Total:</b> ₹${o.total}<br>
-    <b>Date:</b> ${o.date}
-    </div>`;
-  }
+ html+=`
+ <div style="border:1px solid #ccc; margin:10px; padding:10px;">
+ <b>ID:</b> ${doc.id}<br>
+ <b>Name:</b> ${o.name}<br>
+ <b>Total:</b> ₹${o.total}<br>
+ <b>Status:</b> ${o.status}
+ </div>`;
  });
 
  document.getElementById("orders").innerHTML=html;
 }
+
+loadOrders();
 
 </script>
 
