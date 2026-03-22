@@ -5,31 +5,79 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-body { margin:0; font-family:Arial; background:#f1f3f6; }
+body { margin:0; font-family:Arial; background:#f4f6f9; }
 
+/* HEADER */
 header {
     background:white;
-    padding:10px;
+    padding:10px 20px;
     display:flex;
     justify-content:space-between;
+    align-items:center;
+    box-shadow:0 2px 5px rgba(0,0,0,0.1);
 }
-.logo { font-weight:bold; color:red; }
-.cart {
-    background:green;
+.logo img { height:40px; }
+
+/* HERO */
+.hero {
+    background: linear-gradient(135deg, #0f9b0f, #ff0000);
     color:white;
-    padding:8px 12px;
-    border-radius:20px;
-    cursor:pointer;
+    padding:40px 20px;
+    text-align:center;
+}
+.hero h1 { margin:0; }
+
+/* INPUT */
+.inputs {
+    padding:10px;
+    text-align:center;
+}
+.inputs input {
+    padding:10px;
+    margin:5px;
+    width:45%;
+    border-radius:8px;
+    border:1px solid #ccc;
 }
 
-.products { display:flex; flex-wrap:wrap; justify-content:center; }
+/* PRODUCTS */
+.products {
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+}
 .card {
     background:white;
-    width:160px;
+    width:170px;
     margin:10px;
     padding:10px;
     border-radius:10px;
     text-align:center;
+    box-shadow:0 2px 5px rgba(0,0,0,0.1);
+}
+.card img {
+    width:100%;
+    height:120px;
+    object-fit:cover;
+}
+
+button {
+    background:red;
+    color:white;
+    border:none;
+    padding:8px;
+    margin-top:5px;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+/* CART */
+.cartBtn {
+    background:green;
+    color:white;
+    padding:8px 15px;
+    border-radius:20px;
+    cursor:pointer;
 }
 
 #cartPopup {
@@ -42,29 +90,34 @@ header {
     background:white;
     padding:15px;
     overflow:auto;
+    box-shadow:-3px 0 10px rgba(0,0,0,0.3);
 }
-
-input { padding:8px; margin:5px; width:90%; }
-button { padding:8px; margin-top:5px; }
 </style>
 </head>
 
 <body>
 
 <header>
-<div class="logo">AZAD PRIME MEDICO</div>
-<div class="cart" onclick="openCart()">🛒 Cart (<span id="cartCount">0</span>)</div>
+<div class="logo">
+    <img src="logo.png" alt="Logo">
+</div>
+<div class="cartBtn" onclick="openCart()">🛒 Cart (<span id="cartCount">0</span>)</div>
 </header>
 
-<div style="padding:10px;">
-<input type="text" id="name" placeholder="Customer Name">
-<input type="text" id="phone" placeholder="Phone Number">
+<div class="hero">
+<h1>Online Medical Store - Ranchi</h1>
+<p>Fast Delivery | Genuine Medicines</p>
+</div>
+
+<div class="inputs">
+<input type="text" id="name" placeholder="Your Name">
+<input type="text" id="phone" placeholder="Mobile Number">
 </div>
 
 <div class="products" id="product-list"></div>
 
 <div id="cartPopup">
-<h3>Cart</h3>
+<h3>Your Cart</h3>
 <div id="cartItems"></div>
 <h4 id="total">Total ₹0</h4>
 
@@ -86,7 +139,8 @@ const app = initializeApp({
 
 const db = getFirestore(app);
 
-let products=[], cart=[];
+let products = [];
+let cart = [];
 
 // LOAD PRODUCTS
 async function loadProducts(){
@@ -102,16 +156,16 @@ function display(data){
  data.forEach(p=>{
   html+=`
   <div class="card">
-   <img src="${p.image}" width="100">
+   <img src="${p.image}">
    <h4>${p.name}</h4>
-   ₹${p.price}<br>
+   ₹${p.price}
    <button onclick='add(${JSON.stringify(p)})'>Add</button>
   </div>`;
  });
  document.getElementById("product-list").innerHTML=html;
 }
 
-// ADD CART (WITH QTY)
+// ADD CART
 window.add=function(p){
  let item=cart.find(i=>i.id===p.id);
  if(item){ item.qty++; }
@@ -119,17 +173,14 @@ window.add=function(p){
  render();
 }
 
-// RENDER CART
+// RENDER
 function render(){
  let html=""; let total=0;
 
  cart.forEach((i,index)=>{
   total+=i.price*i.qty;
-  html+=`
-  <div>
-   ${i.name} x${i.qty} = ₹${i.price*i.qty}
-   <button onclick="removeItem(${index})">X</button>
-  </div>`;
+  html+=`${i.name} x${i.qty} = ₹${i.price*i.qty}
+  <button onclick="removeItem(${index})">X</button><br>`;
  });
 
  document.getElementById("cartItems").innerHTML=html;
@@ -143,8 +194,8 @@ window.removeItem=function(i){
  render();
 }
 
-// CART OPEN
-window.openCart=()=>document.getElementById("cartPopup").style.display="block";
+// CART UI
+window.openCart=()=>{document.getElementById("cartPopup").style.display="block"; render();}
 window.closeCart=()=>document.getElementById("cartPopup").style.display="none";
 
 // PLACE ORDER
@@ -154,7 +205,7 @@ window.placeOrder=async function(){
  let phone=document.getElementById("phone").value;
 
  if(!name||!phone||cart.length==0){
-  alert("Fill details + cart");
+  alert("Enter details + cart");
   return;
  }
 
@@ -170,6 +221,8 @@ window.placeOrder=async function(){
 
  let ref=await addDoc(collection(db,"orders"),order);
 
+ alert("Order Placed ✅ ID: "+ref.id);
+
  generateInvoice(ref.id,order);
 
  cart=[];
@@ -181,16 +234,17 @@ window.placeOrder=async function(){
 function generateInvoice(id,o){
 
  let html=`
+ <div style="width:300px">
  <h2>Azad Prime Medico</h2>
  Order ID: ${id}<br>
  Name: ${o.name}<br>
- Phone: ${o.phone}<br><hr>`;
+ Phone: ${o.phone}<hr>`;
 
  o.items.forEach(i=>{
   html+=`${i.name} x${i.qty} = ₹${i.price*i.qty}<br>`;
  });
 
- html+=`<hr>Total ₹${o.total}<br>Status: ${o.status}`;
+ html+=`<hr>Total ₹${o.total}<br>Status: ${o.status}</div>`;
 
  let w=window.open("");
  w.document.write(html);
@@ -200,11 +254,12 @@ function generateInvoice(id,o){
 // UPI
 window.payNow=function(){
  let total=cart.reduce((s,i)=>s+i.price*i.qty,0);
- window.open("upi://pay?pa=gulamhamid164@okaxis&pn=Azad&am="+total);
+ window.open("upi://pay?pa=gulamhamid164@okaxis&pn=AzadPrimeMedico&am="+total);
 }
 
 loadProducts();
 
 </script>
+
 </body>
 </html>
