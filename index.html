@@ -229,16 +229,21 @@ window.openCart = ()=>{cartPopup.style.display="block"; render();}
 window.closeCart = ()=>cartPopup.style.display="none";
 
 /* PLACE ORDER */
-window.placeOrder = async()=>{
+window.placeOrder = async function(){
+
  let n = document.getElementById("name").value.trim();
  let p = document.getElementById("phone").value.trim();
 
- if(!n || !p || cart.length==0){
-  alert("Fill Name, Phone & Cart");
+ console.log("Name:", n);
+ console.log("Phone:", p);
+ console.log("Cart:", cart);
+
+ if(n === "" || p === "" || cart.length === 0){
+  alert("Please enter Name, Phone and add product");
   return;
  }
 
- let t = cart.reduce((s,i)=>s+i.price*i.qty,0);
+ let t = cart.reduce((s,i)=>s + (i.price * i.qty), 0);
 
  let orderData = {
   name:n,
@@ -249,8 +254,22 @@ window.placeOrder = async()=>{
   date:new Date().toLocaleString()
  };
 
- let ref = await addDoc(collection(db,"orders"),orderData);
+ try{
+   let ref = await addDoc(collection(db,"orders"), orderData);
 
+   alert("Order Placed ✅ ID: " + ref.id);
+
+   generateInvoice(ref.id, orderData);
+
+   cart = [];
+   render();
+   closeCart();
+
+ }catch(err){
+   console.error(err);
+   alert("Order failed ❌ check console");
+ }
+}
  alert("Order Placed ✅ ID: "+ref.id);
 
  generateInvoice(ref.id, orderData);
