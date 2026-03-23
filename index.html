@@ -139,7 +139,7 @@ button {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
 import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
-const firebaseConfig = {
+const app = initializeApp({
   apiKey: "AIzaSyCqpzQlN_qu53CKbPa_XFDnoyN6SgxhKRw",
   authDomain: "azad-prime-medico.firebaseapp.com",
   projectId: "azad-prime-medico",
@@ -147,7 +147,7 @@ const firebaseConfig = {
   messagingSenderId: "111274201862",
   appId: "1:111274201862:web:a052eff79eca9f7d1ac487",
   measurementId: "G-MZSRS1FJWE"
-};
+});
 
 const app = initializeApp(firebaseConfig);
 
