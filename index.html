@@ -32,8 +32,8 @@ header {
 .cartBtn {
     background:linear-gradient(45deg,#0f9b0f,#38ef7d);
     color:white;
-    padding:10px 15px;
-    border-radius:20px;
+    padding:10px 18px;
+    border-radius:25px;
     cursor:pointer;
     font-weight:bold;
 }
@@ -53,7 +53,7 @@ header {
     padding:12px;
     margin:5px;
     width:45%;
-    border-radius:20px;
+    border-radius:25px;
     border:1px solid #ccc;
 }
 
@@ -101,7 +101,7 @@ button {
     background:#ff4d4d;
     color:white;
     border:none;
-    padding:8px;
+    padding:8px 10px;
     border-radius:6px;
     cursor:pointer;
     margin-top:5px;
@@ -113,12 +113,23 @@ button {
     position:fixed;
     right:0;
     top:0;
-    width:320px;
+    width:330px;
     height:100%;
     background:white;
     padding:15px;
     overflow:auto;
     box-shadow:-3px 0 10px rgba(0,0,0,0.3);
+}
+
+.cartItem {
+    border-bottom:1px solid #ddd;
+    padding:8px 0;
+}
+
+.totalBox {
+    font-weight:bold;
+    font-size:18px;
+    margin-top:10px;
 }
 </style>
 </head>
@@ -144,16 +155,16 @@ button {
 <div class="offerCard">💊 15% OFF Medicines</div>
 <div class="offerCard">🚚 Free Delivery ₹499+</div>
 <div class="offerCard">🔥 Buy 2 Get 1</div>
-<div class="offerCard">🩺 Upload Prescription Discount</div>
+<div class="offerCard">🩺 Prescription Discount</div>
 </div>
 
 <div class="products" id="list"></div>
 
 <!-- CART -->
 <div id="cartPopup">
-<h3>Cart</h3>
+<h3>🛒 Cart</h3>
 <div id="items"></div>
-<h4 id="total">Total ₹0</h4>
+<div class="totalBox" id="total">Total ₹0</div>
 
 <button onclick="placeOrder()">Place Order</button>
 <button onclick="payNow()">Pay UPI</button>
@@ -165,18 +176,16 @@ button {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
 import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
-/* FIREBASE CONFIG */
+/* FIREBASE */
 const firebaseConfig = {
   apiKey: "AIzaSyCqpzQlN_qu53CKbPa_XFDnoyN6SgxhKRw",
   authDomain: "azad-prime-medico.firebaseapp.com",
   projectId: "azad-prime-medico",
   storageBucket: "azad-prime-medico.firebasestorage.app",
   messagingSenderId: "111274201862",
-  appId: "1:111274201862:web:a052eff79eca9f7d1ac487",
-  measurementId: "G-MZSRS1FJWE"
+  appId: "1:111274201862:web:a052eff79eca9f7d1ac487"
 };
 
-/* INIT */
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
@@ -192,7 +201,6 @@ async function load(){
   products.push({id:d.id,...d.data(),qty:1});
  });
 
- console.log(products);
  show(products);
 }
 
@@ -210,7 +218,7 @@ function show(data){
  document.getElementById("list").innerHTML=html;
 }
 
-/* ADD CART */
+/* ADD */
 window.add = (p)=>{
  let i = cart.find(x=>x.id===p.id);
  if(i) i.qty++;
@@ -218,14 +226,16 @@ window.add = (p)=>{
  render();
 }
 
-/* RENDER */
+/* RENDER CART */
 function render(){
  let html="",t=0;
 
  cart.forEach((i,ind)=>{
  t+=i.price*i.qty;
- html+=`${i.name} x${i.qty} ₹${i.price*i.qty}
- <button onclick="remove(${ind})">X</button><br>`;
+ html+=`<div class="cartItem">
+ ${i.name} x${i.qty} = ₹${i.price*i.qty}
+ <button onclick="remove(${ind})">X</button>
+ </div>`;
  });
 
  document.getElementById("items").innerHTML=html;
@@ -243,10 +253,10 @@ window.remove = (i)=>{
 window.openCart = ()=>cartPopup.style.display="block";
 window.closeCart = ()=>cartPopup.style.display="none";
 
-/* PLACE ORDER */
+/* ORDER */
 window.placeOrder = async()=>{
- let n = document.getElementById("name").value;
- let p = document.getElementById("phone").value;
+ let n = name.value;
+ let p = phone.value;
 
  if(!n || !p || cart.length==0){
   alert("Fill all details");
@@ -266,30 +276,35 @@ window.placeOrder = async()=>{
 
  alert("Order ID: "+ref.id);
 
- invoice(ref.id,n,p,t);
+ invoice(ref.id,n,p,cart,t);
 
  cart=[];
  render();
 }
 
-/* INVOICE */
-function invoice(id,n,p,t){
+/* INVOICE WITH PRODUCTS */
+function invoice(id,n,p,cart,t){
+
+ let itemsHTML = "";
+ cart.forEach(i=>{
+ itemsHTML += `${i.name} x${i.qty} = ₹${i.price*i.qty}<br>`;
+ });
+
  let w = window.open("");
  w.document.write(`
  <h2>Azad Prime Medico</h2>
  Order ID: ${id}<br>
  Name: ${n}<br>
  Phone: ${p}<hr>
- Total ₹${t}
+ ${itemsHTML}
+ <hr><b>Total ₹${t}</b>
  `);
- w.document.close();
  w.print();
 }
 
 /* TRACK */
 window.track = ()=>{
- let phone = document.getElementById("phone").value;
- window.open("orders.html?phone="+phone);
+ window.open("orders.html?phone="+phone.value);
 }
 
 /* UPI */
