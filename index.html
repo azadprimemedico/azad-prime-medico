@@ -18,15 +18,16 @@ body {
 100%{background-position:0% 50%;}
 }
 
+/* HEADER */
 header {
     background:white;
-    padding:12px;
+    padding:12px 20px;
     display:flex;
     justify-content:space-between;
     align-items:center;
     box-shadow:0 2px 10px rgba(0,0,0,0.1);
 }
-.logo img { height:60px; }
+.logo img { height:65px; }
 
 .cartBtn {
     background:linear-gradient(45deg,#0f9b0f,#38ef7d);
@@ -34,45 +35,65 @@ header {
     padding:10px 15px;
     border-radius:20px;
     cursor:pointer;
+    font-weight:bold;
 }
 
+/* HERO */
 .hero {
     background:linear-gradient(135deg,#0f9b0f,#ff4d4d);
     color:white;
     padding:40px;
     text-align:center;
 }
+.hero h2 { margin:0; }
 
+/* INPUT */
 .inputs { text-align:center; padding:15px; }
 .inputs input {
-    padding:10px;
+    padding:12px;
     margin:5px;
     width:45%;
     border-radius:20px;
     border:1px solid #ccc;
 }
 
-.offers { display:flex; overflow:auto; padding:10px; }
+/* OFFERS */
+.offers {
+    display:flex;
+    overflow:auto;
+    padding:10px;
+}
 .offerCard {
     min-width:220px;
     background:white;
     margin:5px;
     padding:15px;
-    border-radius:10px;
+    border-radius:12px;
+    font-weight:bold;
+    box-shadow:0 2px 5px rgba(0,0,0,0.1);
 }
 
-.products { display:flex; flex-wrap:wrap; justify-content:center; }
+/* PRODUCTS */
+.products {
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+}
 .card {
     background:white;
-    width:170px;
+    width:180px;
     margin:10px;
     padding:10px;
-    border-radius:10px;
+    border-radius:12px;
     text-align:center;
+    box-shadow:0 3px 8px rgba(0,0,0,0.1);
+    transition:0.3s;
 }
+.card:hover { transform:scale(1.05); }
+
 .card img {
     width:100%;
-    height:120px;
+    height:130px;
     object-fit:cover;
 }
 
@@ -83,8 +104,10 @@ button {
     padding:8px;
     border-radius:6px;
     cursor:pointer;
+    margin-top:5px;
 }
 
+/* CART */
 #cartPopup {
     display:none;
     position:fixed;
@@ -95,6 +118,7 @@ button {
     background:white;
     padding:15px;
     overflow:auto;
+    box-shadow:-3px 0 10px rgba(0,0,0,0.3);
 }
 </style>
 </head>
@@ -120,10 +144,12 @@ button {
 <div class="offerCard">💊 15% OFF Medicines</div>
 <div class="offerCard">🚚 Free Delivery ₹499+</div>
 <div class="offerCard">🔥 Buy 2 Get 1</div>
+<div class="offerCard">🩺 Upload Prescription Discount</div>
 </div>
 
 <div class="products" id="list"></div>
 
+<!-- CART -->
 <div id="cartPopup">
 <h3>Cart</h3>
 <div id="items"></div>
@@ -139,7 +165,8 @@ button {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
 import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
-const app = initializeApp({
+/* FIREBASE CONFIG */
+const firebaseConfig = {
   apiKey: "AIzaSyCqpzQlN_qu53CKbPa_XFDnoyN6SgxhKRw",
   authDomain: "azad-prime-medico.firebaseapp.com",
   projectId: "azad-prime-medico",
@@ -147,20 +174,29 @@ const app = initializeApp({
   messagingSenderId: "111274201862",
   appId: "1:111274201862:web:a052eff79eca9f7d1ac487",
   measurementId: "G-MZSRS1FJWE"
-});
+};
 
+/* INIT */
 const app = initializeApp(firebaseConfig);
-
 const db = getFirestore(app);
 
-let products=[], cart=[];
+let products = [];
+let cart = [];
 
+/* LOAD PRODUCTS */
 async function load(){
  let snap = await getDocs(collection(db,"products"));
- snap.forEach(d=>products.push({id:d.id,...d.data(),qty:1}));
+ products = [];
+
+ snap.forEach(d=>{
+  products.push({id:d.id,...d.data(),qty:1});
+ });
+
+ console.log(products);
  show(products);
 }
 
+/* SHOW PRODUCTS */
 function show(data){
  let html="";
  data.forEach(p=>{
@@ -171,62 +207,98 @@ function show(data){
  <button onclick='add(${JSON.stringify(p)})'>Add</button>
  </div>`;
  });
- list.innerHTML=html;
+ document.getElementById("list").innerHTML=html;
 }
 
-window.add=p=>{
- let i=cart.find(x=>x.id===p.id);
- if(i)i.qty++; else cart.push({...p});
+/* ADD CART */
+window.add = (p)=>{
+ let i = cart.find(x=>x.id===p.id);
+ if(i) i.qty++;
+ else cart.push({...p,qty:1});
  render();
 }
 
+/* RENDER */
 function render(){
  let html="",t=0;
+
  cart.forEach((i,ind)=>{
  t+=i.price*i.qty;
  html+=`${i.name} x${i.qty} ₹${i.price*i.qty}
  <button onclick="remove(${ind})">X</button><br>`;
  });
- items.innerHTML=html;
- total.innerText="Total ₹"+t;
- count.innerText=cart.length;
+
+ document.getElementById("items").innerHTML=html;
+ document.getElementById("total").innerText="Total ₹"+t;
+ document.getElementById("count").innerText=cart.length;
 }
 
-window.remove=i=>{cart.splice(i,1);render();}
+/* REMOVE */
+window.remove = (i)=>{
+ cart.splice(i,1);
+ render();
+}
 
-window.openCart=()=>cartPopup.style.display="block";
-window.closeCart=()=>cartPopup.style.display="none";
+/* CART UI */
+window.openCart = ()=>cartPopup.style.display="block";
+window.closeCart = ()=>cartPopup.style.display="none";
 
-window.placeOrder=async()=>{
- let n=name.value, p=phone.value;
- if(!n||!p||cart.length==0)return alert("Fill all");
+/* PLACE ORDER */
+window.placeOrder = async()=>{
+ let n = document.getElementById("name").value;
+ let p = document.getElementById("phone").value;
 
- let t=cart.reduce((s,i)=>s+i.price*i.qty,0);
+ if(!n || !p || cart.length==0){
+  alert("Fill all details");
+  return;
+ }
 
- let ref=await addDoc(collection(db,"orders"),{
- name:n,phone:p,items:cart,total:t,status:"Pending",
- date:new Date().toLocaleString()
+ let t = cart.reduce((s,i)=>s+i.price*i.qty,0);
+
+ let ref = await addDoc(collection(db,"orders"),{
+  name:n,
+  phone:p,
+  items:cart,
+  total:t,
+  status:"Pending",
+  date:new Date().toLocaleString()
  });
 
  alert("Order ID: "+ref.id);
+
  invoice(ref.id,n,p,t);
- cart=[]; render();
+
+ cart=[];
+ render();
 }
 
+/* INVOICE */
 function invoice(id,n,p,t){
- let w=window.open("");
- w.document.write(`<h2>Azad Prime Medico</h2>
- ID:${id}<br>Name:${n}<br>Phone:${p}<hr>Total ₹${t}`);
+ let w = window.open("");
+ w.document.write(`
+ <h2>Azad Prime Medico</h2>
+ Order ID: ${id}<br>
+ Name: ${n}<br>
+ Phone: ${p}<hr>
+ Total ₹${t}
+ `);
+ w.document.close();
  w.print();
 }
 
-window.track=()=>window.open("orders.html?phone="+phone.value);
-
-window.payNow=()=>{
- let t=cart.reduce((s,i)=>s+i.price*i.qty,0);
- window.open("upi://pay?pa=gulamhamid164@okaxis&pn=Azad&am="+t);
+/* TRACK */
+window.track = ()=>{
+ let phone = document.getElementById("phone").value;
+ window.open("orders.html?phone="+phone);
 }
 
+/* UPI */
+window.payNow = ()=>{
+ let t = cart.reduce((s,i)=>s+i.price*i.qty,0);
+ window.open("upi://pay?pa=gulamhamid164@okaxis&pn=AzadPrimeMedico&am="+t);
+}
+
+/* START */
 load();
 </script>
 
