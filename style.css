@@ -1,0 +1,111 @@
+body {
+    margin:0;
+    font-family: 'Segoe UI', sans-serif;
+    background:#f5f7fa;
+}
+
+/* HEADER */
+header {
+    background:white;
+    padding:15px 25px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    box-shadow:0 2px 8px rgba(0,0,0,0.1);
+}
+
+.logo img {
+    height:70px;
+}
+
+/* SEARCH BAR */
+.searchBar {
+    width:50%;
+    padding:10px;
+    border-radius:25px;
+    border:1px solid #ddd;
+}
+
+/* HERO */
+.hero {
+    background: linear-gradient(135deg,#00c853,#ff5252);
+    color:white;
+    padding:50px;
+    text-align:center;
+    animation: fadeIn 1s ease;
+}
+
+@keyframes fadeIn {
+    from {opacity:0;}
+    to {opacity:1;}
+}
+
+/* OFFERS */
+.offers {
+    display:flex;
+    overflow:auto;
+    padding:15px;
+}
+
+.offerCard {
+    min-width:250px;
+    background:white;
+    margin:10px;
+    padding:20px;
+    border-radius:15px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+    transition:0.3s;
+}
+.offerCard:hover {
+    transform:translateY(-5px);
+}
+
+/* PRODUCTS */
+.products {
+    display:grid;
+    grid-template-columns: repeat(auto-fill,minmax(180px,1fr));
+    gap:15px;
+    padding:20px;
+}
+
+.card {
+    background:white;
+    padding:15px;
+    border-radius:15px;
+    text-align:center;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+    transition:0.3s;
+}
+
+.card:hover {
+    transform:scale(1.05);
+}
+
+.card img {
+    width:100%;
+    height:140px;
+    object-fit:cover;
+}
+
+/* BUTTON */
+button {
+    background:#ff5252;
+    color:white;
+    border:none;
+    padding:8px 12px;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+/* CART */
+#cartPopup {
+    position:fixed;
+    right:0;
+    top:0;
+    width:350px;
+    height:100%;
+    background:white;
+    padding:20px;
+    display:none;
+    box-shadow:-5px 0 15px rgba(0,0,0,0.2);
+}
