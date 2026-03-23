@@ -24,7 +24,6 @@ header {
     display:flex;
     justify-content:space-between;
     align-items:center;
-    box-shadow:0 2px 10px rgba(0,0,0,0.1);
 }
 .logo img { height:65px; }
 
@@ -34,7 +33,6 @@ header {
     padding:10px 15px;
     border-radius:20px;
     cursor:pointer;
-    font-weight:bold;
 }
 
 .hero {
@@ -50,21 +48,6 @@ header {
     margin:5px;
     width:45%;
     border-radius:20px;
-    border:1px solid #ccc;
-}
-
-.offers {
-    display:flex;
-    overflow:auto;
-    padding:10px;
-}
-.offerCard {
-    min-width:220px;
-    background:white;
-    margin:5px;
-    padding:15px;
-    border-radius:12px;
-    font-weight:bold;
 }
 
 .products {
@@ -79,7 +62,6 @@ header {
     padding:10px;
     border-radius:12px;
     text-align:center;
-    box-shadow:0 3px 8px rgba(0,0,0,0.1);
 }
 .card img {
     width:100%;
@@ -93,7 +75,6 @@ button {
     border:none;
     padding:8px;
     border-radius:6px;
-    cursor:pointer;
 }
 
 #cartPopup {
@@ -105,7 +86,6 @@ button {
     height:100%;
     background:white;
     padding:15px;
-    overflow:auto;
 }
 </style>
 </head>
@@ -127,13 +107,6 @@ button {
 <input id="phone" placeholder="Mobile Number">
 </div>
 
-<div class="offers">
-<div class="offerCard">💊 15% OFF Medicines</div>
-<div class="offerCard">🚚 Free Delivery ₹499+</div>
-<div class="offerCard">🔥 Buy 2 Get 1</div>
-<div class="offerCard">🩺 Prescription Discount</div>
-</div>
-
 <div class="products" id="list"></div>
 
 <div id="cartPopup">
@@ -142,8 +115,6 @@ button {
 <h4 id="total">Total ₹0</h4>
 
 <button onclick="placeOrder()">Place Order</button>
-<button onclick="payNow()">Pay UPI</button>
-<button onclick="track()">Track Order</button>
 <button onclick="closeCart()">Close</button>
 </div>
 
@@ -151,14 +122,11 @@ button {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
 import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
-/* FIREBASE CONFIG */
+/* ✅ ONLY ONE FIREBASE INIT */
 const firebaseConfig = {
   apiKey: "AIzaSyCqpzQlN_qu53CKbPa_XFDnoyN6SgxhKRw",
   authDomain: "azad-prime-medico.firebaseapp.com",
-  projectId: "azad-prime-medico",
-  storageBucket: "azad-prime-medico.firebasestorage.app",
-  messagingSenderId: "111274201862",
-  appId: "1:111274201862:web:a052eff79eca9f7d1ac487"
+  projectId: "azad-prime-medico"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -176,6 +144,7 @@ async function load(){
   products.push({id:d.id,...d.data(),qty:1});
  });
 
+ console.log("Products:", products);
  show(products);
 }
 
@@ -208,8 +177,7 @@ function render(){
 
  cart.forEach((i,ind)=>{
  t+=i.price*i.qty;
- html+=`
- ${i.name} x${i.qty} = ₹${i.price*i.qty}
+ html+=`${i.name} x${i.qty} ₹${i.price*i.qty}
  <button onclick="remove(${ind})">X</button><br>`;
  });
 
@@ -228,15 +196,11 @@ window.remove = (i)=>{
 window.openCart = ()=>{cartPopup.style.display="block"; render();}
 window.closeCart = ()=>cartPopup.style.display="none";
 
-/* PLACE ORDER */
+/* PLACE ORDER FIXED */
 window.placeOrder = async function(){
 
  let n = document.getElementById("name").value.trim();
  let p = document.getElementById("phone").value.trim();
-
- console.log("Name:", n);
- console.log("Phone:", p);
- console.log("Cart:", cart);
 
  if(n === "" || p === "" || cart.length === 0){
   alert("Please enter Name, Phone and add product");
@@ -267,50 +231,28 @@ window.placeOrder = async function(){
 
  }catch(err){
    console.error(err);
-   alert("Order failed ❌ check console");
+   alert("Order failed ❌");
  }
 }
- alert("Order Placed ✅ ID: "+ref.id);
 
- generateInvoice(ref.id, orderData);
-
- cart=[];
- render();
- closeCart();
-}
-
-/* INVOICE WITH PRODUCT DETAILS */
+/* INVOICE */
 function generateInvoice(id,o){
  let html=`
- <div style="width:300px;font-family:Arial">
  <h2>Azad Prime Medico</h2>
- <b>Order ID:</b> ${id}<br>
- <b>Name:</b> ${o.name}<br>
- <b>Phone:</b> ${o.phone}<hr>`;
+ Order ID: ${id}<br>
+ Name: ${o.name}<br>
+ Phone: ${o.phone}<hr>`;
 
  o.items.forEach(i=>{
   html+=`${i.name} x${i.qty} = ₹${i.price*i.qty}<br>`;
  });
 
- html+=`<hr><b>Total ₹${o.total}</b><br>Status: ${o.status}</div>`;
+ html+=`<hr>Total ₹${o.total}`;
 
  let w = window.open("");
  w.document.write(html);
  w.document.close();
  w.print();
-}
-
-/* TRACK */
-window.track = ()=>{
- let phone = document.getElementById("phone").value;
- if(!phone) return alert("Enter phone number");
- window.open("orders.html?phone="+phone);
-}
-
-/* UPI */
-window.payNow = ()=>{
- let t = cart.reduce((s,i)=>s+i.price*i.qty,0);
- window.open("upi://pay?pa=gulamhamid164@okaxis&pn=AzadPrimeMedico&am="+t);
 }
 
 /* START */
