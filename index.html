@@ -8,35 +8,60 @@
 body {
     margin:0;
     font-family:'Segoe UI',Arial;
-    background:#eef3f8;
+    background: linear-gradient(-45deg,#e6f7ff,#f0fff0,#fff5f5,#eef3f8);
+    background-size:400% 400%;
+    animation: bg 10s infinite;
+}
+@keyframes bg {
+0%{background-position:0% 50%;}
+50%{background-position:100% 50%;}
+100%{background-position:0% 50%;}
 }
 
-/* HEADER */
 header {
     background:white;
-    padding:15px;
+    padding:12px 20px;
     display:flex;
     justify-content:space-between;
     align-items:center;
     box-shadow:0 2px 10px rgba(0,0,0,0.1);
 }
-.logo img { height:70px; }
+.logo img { height:65px; }
 
-/* SEARCH */
-.searchBox {
-    width:100%;
-    padding:12px;
+.cartBtn {
+    background:linear-gradient(45deg,#0f9b0f,#38ef7d);
+    color:white;
+    padding:10px 15px;
     border-radius:20px;
-    border:1px solid #ccc;
-    margin:10px;
+    cursor:pointer;
+    font-weight:bold;
 }
 
-/* HERO */
 .hero {
     background:linear-gradient(135deg,#0f9b0f,#ff4d4d);
     color:white;
     padding:40px;
     text-align:center;
+}
+
+.inputs { text-align:center; padding:15px; }
+.inputs input {
+    padding:12px;
+    margin:5px;
+    width:45%;
+    border-radius:20px;
+    border:1px solid #ccc;
+}
+
+.searchBox {
+    text-align:center;
+    padding:10px;
+}
+.searchBox input {
+    width:80%;
+    padding:10px;
+    border-radius:20px;
+    border:1px solid #ccc;
 }
 
 /* OFFERS */
@@ -46,11 +71,11 @@ header {
     padding:10px;
 }
 .offerCard {
-    min-width:200px;
+    min-width:220px;
     background:white;
     margin:5px;
     padding:15px;
-    border-radius:10px;
+    border-radius:12px;
     font-weight:bold;
 }
 
@@ -65,41 +90,37 @@ header {
     width:180px;
     margin:10px;
     padding:10px;
-    border-radius:10px;
+    border-radius:12px;
     text-align:center;
-    box-shadow:0 2px 5px rgba(0,0,0,0.1);
+    box-shadow:0 3px 8px rgba(0,0,0,0.1);
 }
 .card img {
     width:100%;
-    height:120px;
+    height:130px;
+    object-fit:cover;
+}
+
+button {
+    background:#ff4d4d;
+    color:white;
+    border:none;
+    padding:8px;
+    border-radius:6px;
+    cursor:pointer;
 }
 
 /* CART */
-#cart {
+#cartPopup {
+    display:none;
     position:fixed;
     right:0;
     top:0;
     width:320px;
     height:100%;
     background:white;
-    display:none;
     padding:15px;
     overflow:auto;
-}
-
-button {
-    background:red;
-    color:white;
-    border:none;
-    padding:8px;
-    margin-top:5px;
-    border-radius:6px;
-}
-.cartBtn {
-    background:green;
-    padding:10px;
-    color:white;
-    border-radius:20px;
+    box-shadow:-3px 0 10px rgba(0,0,0,0.3);
 }
 </style>
 </head>
@@ -107,36 +128,35 @@ button {
 <body>
 
 <header>
-<div class="logo">
-<img src="logo.png">
-</div>
-
+<div class="logo"><img src="logo.png"></div>
 <div class="cartBtn" onclick="openCart()">🛒 (<span id="count">0</span>)</div>
 </header>
-
-<input type="text" id="search" class="searchBox" placeholder="🔍 Search medicine..." onkeyup="searchProduct()">
 
 <div class="hero">
 <h2>💊 Online Medical Store</h2>
 <p>Fast Delivery | Genuine Medicines</p>
 </div>
 
-<div style="text-align:center; padding:10px;">
+<div class="inputs">
 <input id="name" placeholder="Your Name">
 <input id="phone" placeholder="Mobile Number">
 </div>
 
+<div class="searchBox">
+<input type="text" placeholder="Search medicine..." onkeyup="search(this.value)">
+</div>
+
 <div class="offers">
-<div class="offerCard">💊 15% OFF</div>
-<div class="offerCard">🚚 Free Delivery</div>
+<div class="offerCard">💊 15% OFF Medicines</div>
+<div class="offerCard">🚚 Free Delivery ₹499+</div>
 <div class="offerCard">🔥 Buy 2 Get 1</div>
+<div class="offerCard">🩺 Prescription Discount</div>
 </div>
 
 <div class="products" id="list"></div>
 
-<!-- CART -->
-<div id="cart">
-<h3>Cart</h3>
+<div id="cartPopup">
+<h3>🛒 Cart</h3>
 <div id="items"></div>
 <h4 id="total">Total ₹0</h4>
 
@@ -159,17 +179,20 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let products=[], cart=[];
+let products = [];
+let cart = [];
 
 /* LOAD PRODUCTS */
 async function load(){
  let snap = await getDocs(collection(db,"products"));
- products=[];
- snap.forEach(d=>products.push({id:d.id,...d.data()}));
+ products = [];
+ snap.forEach(d=>{
+  products.push({id:d.id,...d.data(),qty:1});
+ });
  show(products);
 }
 
-/* DISPLAY */
+/* SHOW */
 function show(data){
  let html="";
  data.forEach(p=>{
@@ -185,16 +208,15 @@ function show(data){
 }
 
 /* SEARCH */
-window.searchProduct=()=>{
- let val=document.getElementById("search").value.toLowerCase();
- let filtered=products.filter(p=>p.name.toLowerCase().includes(val));
+window.search = (q)=>{
+ let filtered = products.filter(p=>p.name.toLowerCase().includes(q.toLowerCase()));
  show(filtered);
 }
 
-/* ADD CART */
-window.add=(p)=>{
- let item=cart.find(i=>i.id===p.id);
- if(item) item.qty++;
+/* ADD */
+window.add = (p)=>{
+ let i = cart.find(x=>x.id===p.id);
+ if(i) i.qty++;
  else cart.push({...p,qty:1});
  render();
 }
@@ -202,10 +224,10 @@ window.add=(p)=>{
 /* RENDER */
 function render(){
  let html="",t=0;
- cart.forEach((i,index)=>{
+ cart.forEach((i,ind)=>{
  t+=i.price*i.qty;
  html+=`${i.name} x${i.qty} = ₹${i.price*i.qty}
- <button onclick="remove(${index})">X</button><br>`;
+ <button onclick="remove(${ind})">X</button><br>`;
  });
  items.innerHTML=html;
  total.innerText="Total ₹"+t;
@@ -213,68 +235,82 @@ function render(){
 }
 
 /* REMOVE */
-window.remove=(i)=>{cart.splice(i,1);render();}
-
-/* CART UI */
-window.openCart=()=>cart.style.display="block";
-window.closeCart=()=>cart.style.display="none";
-
-/* PLACE ORDER */
-window.placeOrder=async()=>{
- let n=document.getElementById("name").value.trim();
- let p=document.getElementById("phone").value.trim();
-
- if(n==""||p==""||cart.length==0){
- alert("Enter Name + Phone + Add Product");
- return;
- }
-
- let t=cart.reduce((s,i)=>s+i.price*i.qty,0);
-
- let order={
- name:n,phone:p,
- items:cart,total:t,
- status:"Pending",
- date:new Date().toLocaleString()
- };
-
- let ref=await addDoc(collection(db,"orders"),order);
-
- alert("Order Placed ✅ ID: "+ref.id);
-
- invoice(ref.id,order);
-
- cart=[];
+window.remove = (i)=>{
+ cart.splice(i,1);
  render();
- closeCart();
 }
 
-/* INVOICE */
-function invoice(id,o){
- let html=`<h2>Azad Prime Medico</h2>
- Order ID:${id}<br>Name:${o.name}<br>Phone:${o.phone}<hr>`;
+window.openCart=()=>{cartPopup.style.display="block"; render();}
+window.closeCart=()=>cartPopup.style.display="none";
 
- o.items.forEach(i=>{
- html+=`${i.name} x${i.qty} = ₹${i.price*i.qty}<br>`;
- });
+/* ✅ PLACE ORDER FINAL FIX */
+window.placeOrder = async function(){
 
- html+=`<hr>Total ₹${o.total}`;
+ let n = document.getElementById("name").value.trim();
+ let p = document.getElementById("phone").value.trim();
 
- let w=window.open("");
- w.document.write(html);
- w.print();
+ if(n=="" || p=="" || cart.length==0){
+  alert("Enter Name + Phone + Add Products");
+  return;
+ }
+
+ let totalAmount = cart.reduce((s,i)=>s+i.price*i.qty,0);
+
+ let orderData = {
+  name:n,
+  phone:p,
+  items:cart,
+  total:totalAmount,
+  status:"Pending",
+  date:new Date().toLocaleString()
+ };
+
+ try{
+   let ref = await addDoc(collection(db,"orders"), orderData);
+
+   /* ✅ INVOICE */
+   let html = `<h2>Azad Prime Medico</h2>
+   Order ID: ${ref.id}<br>
+   Name: ${n}<br>
+   Phone: ${p}<hr>`;
+
+   cart.forEach(i=>{
+     html += `${i.name} x${i.qty} = ₹${i.price*i.qty}<br>`;
+   });
+
+   html += `<hr>Total ₹${totalAmount}`;
+
+   let w = window.open("");
+   w.document.write(html);
+   w.document.close();
+   w.print();
+
+   /* ✅ WHATSAPP AUTO MESSAGE */
+   let msg = `Hello Azad Prime Medico,%0AOrder ID: ${ref.id}%0AName: ${n}%0APhone: ${p}%0ATotal: ₹${totalAmount}`;
+   window.open("https://wa.me/919108417969?text="+msg);
+
+   alert("Order Placed Successfully ✅");
+
+   cart=[];
+   render();
+   closeCart();
+
+ }catch(err){
+   console.error(err);
+   alert("Error placing order ❌");
+ }
 }
 
 /* TRACK */
-window.track=()=>{
- let phone=document.getElementById("phone").value;
- if(!phone) return alert("Enter phone");
+window.track = ()=>{
+ let phone = document.getElementById("phone").value;
+ if(!phone) return alert("Enter phone number");
  window.open("orders.html?phone="+phone);
 }
 
 /* UPI */
-window.payNow=()=>{
- let t=cart.reduce((s,i)=>s+i.price*i.qty,0);
+window.payNow = ()=>{
+ let t = cart.reduce((s,i)=>s+i.price*i.qty,0);
  window.open("upi://pay?pa=gulamhamid164@okaxis&pn=AzadPrimeMedico&am="+t);
 }
 
