@@ -2,157 +2,19 @@
 <html>
 <head>
 <title>Admin Panel</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-
-<style>
-body { font-family: Arial; background:#f5f5f5; padding:20px; }
-.box { max-width:500px; margin:auto; background:white; padding:20px; border-radius:10px; margin-bottom:20px; }
-.card { background:white; margin:10px; padding:15px; border-radius:10px; text-align:center; }
-</style>
 </head>
-
 <body>
 
-<div class="box" id="loginBox">
-<h2>Admin Login</h2>
-<input type="email" id="email">
-<input type="password" id="password">
-<button onclick="login()">Login</button>
-</div>
-
-<div id="adminPanel" style="display:none;">
-
-<div class="box">
-<h2>Dashboard</h2>
-Total Orders: <span id="totalOrders"></span><br>
-Revenue: ₹<span id="revenue"></span>
-</div>
-
-<div class="box">
 <h2>Add Product</h2>
-<input id="name" placeholder="Name">
+<input id="pname" placeholder="Name">
 <input id="price" placeholder="Price">
 <input id="category" placeholder="Category">
 <input id="image" placeholder="Image URL">
-<button onclick="addProduct()">Add Product</button>
-<button onclick="logout()">Logout</button>
-</div>
+<button onclick="addProduct()">Add</button>
 
-<h3>Products</h3>
-<div id="productList"></div>
+<h2>Products</h2>
+<div id="list"></div>
 
-<h3>Orders</h3>
-<div id="orderList"></div>
-
-</div>
-
-<script>
-const firebaseConfig = {
-  apiKey: "YOUR_KEY",
-  authDomain: "azad-prime-medico.firebaseapp.com",
-  projectId: "azad-prime-medico"
-};
-
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const auth = firebase.auth();
-
-function login(){ auth.signInWithEmailAndPassword(email.value,password.value); }
-function logout(){ auth.signOut(); }
-
-auth.onAuthStateChanged(user=>{
- if(user){
-  loginBox.style.display="none";
-  adminPanel.style.display="block";
-  loadAll();
- }
-});
-
-/* DASHBOARD */
-function loadDashboard(){
- db.collection("orders").get().then(s=>{
-  let total=0,rev=0;
-  s.forEach(d=>{
-   total++;
-   rev += Number(d.data().total);
-  });
-  totalOrders.innerText=total;
-  revenue.innerText=rev;
- });
-}
-
-/* ADD PRODUCT */
-function addProduct(){
- db.collection("products").add({
-  name:name.value,
-  price:Number(price.value),
-  category:category.value,
-  image:image.value
- }).then(()=>{
-  alert("Product Added");
-  loadProducts();
- });
-}
-
-/* DELETE PRODUCT */
-function deleteProduct(id){
- db.collection("products").doc(id).delete().then(loadProducts);
-}
-
-/* LOAD PRODUCTS */
-function loadProducts(){
- db.collection("products").get().then(s=>{
-  let html="";
-  s.forEach(d=>{
-   let p=d.data();
-   html+=`
-   <div class="card">
-   <img src="${p.image}" width="80"><br>
-   ${p.name}<br>₹${p.price}<br>
-   <button onclick="deleteProduct('${d.id}')">Delete</button>
-   </div>`;
-  });
-  productList.innerHTML=html;
- });
-}
-
-/* LOAD ORDERS */
-function loadOrders(){
- db.collection("orders").get().then(s=>{
-  let html="";
-  s.forEach(d=>{
-   let o=d.data();
-   html+=`
-   <div class="card">
-   ${o.name} - ₹${o.total}<br>
-   Status: ${o.status}<br>
-   <select onchange="updateStatus('${d.id}',this.value)">
-   <option ${o.status=="Pending"?"selected":""}>Pending</option>
-   <option ${o.status=="Packed"?"selected":""}>Packed</option>
-   <option ${o.status=="Out for delivery"?"selected":""}>Out for delivery</option>
-   <option ${o.status=="Delivered"?"selected":""}>Delivered</option>
-   </select>
-   </div>`;
-  });
-  orderList.innerHTML=html;
- });
-}
-
-function updateStatus(id,status){
- db.collection("orders").doc(id).update({status});
-}
-
-/* LOAD ALL */
-function loadAll(){
- loadDashboard();
- loadProducts();
- loadOrders();
-}
-</script>
-
+<script type="module" src="admin.js"></script>
 </body>
 </html>
