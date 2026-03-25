@@ -47,6 +47,11 @@ button {
     text-align:center;
 }
 
+select {
+    margin-top:10px;
+    padding:5px;
+}
+
 #adminPanel { display:none; }
 </style>
 </head>
@@ -115,7 +120,6 @@ function login() {
         alert("Login Successful ✅");
     })
     .catch((err) => {
-        console.error(err);
         alert("Login Failed ❌: " + err.message);
     });
 }
@@ -175,21 +179,41 @@ function loadProducts() {
     });
 }
 
-// 📦 LOAD ORDERS
+// 📦 LOAD ORDERS WITH STATUS UPDATE
 function loadOrders(){
     db.collection("orders").get().then(snapshot => {
         let html="";
         snapshot.forEach(doc=>{
             let o=doc.data();
+
             html+=`
             <div class="card">
             <b>ID:</b> ${doc.id}<br>
             <b>Name:</b> ${o.name}<br>
             <b>Phone:</b> ${o.phone}<br>
-            <b>Total:</b> ₹${o.total}
+            <b>Address:</b> ${o.address || ""}<br>
+            <b>Total:</b> ₹${o.total}<br>
+            <b>Status:</b> ${o.status || "Pending"}<br>
+
+            <select onchange="updateStatus('${doc.id}', this.value)">
+                <option value="Pending" ${o.status=="Pending"?"selected":""}>Pending</option>
+                <option value="Packed" ${o.status=="Packed"?"selected":""}>Packed</option>
+                <option value="Out for delivery" ${o.status=="Out for delivery"?"selected":""}>Out for delivery</option>
+                <option value="Delivered" ${o.status=="Delivered"?"selected":""}>Delivered</option>
+            </select>
             </div>`;
         });
+
         document.getElementById("orderList").innerHTML=html;
+    });
+}
+
+// 🔄 UPDATE STATUS
+function updateStatus(id, status){
+    db.collection("orders").doc(id).update({status:status})
+    .then(()=>{
+        alert("Status Updated ✅");
+        loadOrders();
     });
 }
 
