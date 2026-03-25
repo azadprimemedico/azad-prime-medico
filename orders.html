@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Track Orders</title>
+<title>Your Orders</title>
 </head>
 <body>
 
@@ -9,38 +9,22 @@
 <div id="orders"></div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+import { db } from "./firebase.js";
+import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
-const app = initializeApp({
-  apiKey: "AIzaSyCqpzQlN_qu53CKbPa_XFDnoyN6SgxhKRw",
-  authDomain: "azad-prime-medico.firebaseapp.com",
-  projectId: "azad-prime-medico"
-});
-
-const db=getFirestore(app);
-
-let url=new URLSearchParams(window.location.search);
-let phone=url.get("phone");
+let phone=new URLSearchParams(window.location.search).get("phone");
 
 async function load(){
  let snap=await getDocs(collection(db,"orders"));
  let html="";
-
  snap.forEach(d=>{
  let o=d.data();
  if(o.phone==phone){
- html+=`<div>
- <b>ID:</b>${d.id}<br>
- <b>Total:</b>${o.total}<br>
- <b>Status:</b>${o.status}<hr>
- </div>`;
+ html+=`Order ID: ${d.id} | ₹${o.total} | ${o.status}<br>`;
  }
  });
-
- document.getElementById("orders").innerHTML=html||"No orders";
+ orders.innerHTML=html||"No orders found";
 }
-
 load();
 </script>
 
