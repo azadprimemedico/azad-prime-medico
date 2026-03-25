@@ -3,7 +3,6 @@
 <head>
 <title>Azad Prime Medico</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
- 
 <style>
 body {
     margin:0;
@@ -148,7 +147,7 @@ button {
 <div id="cartPopup">
 <h3>🛒 Cart</h3>
 <div id="items"></div>
-<h4 id="total">Total ₹0</h4>
+<h4 id="totalText">Total ₹0</h4>
 
 <button onclick="placeOrder()">Place Order</button>
 <button onclick="payNow()">Pay UPI</button>
@@ -180,21 +179,16 @@ function saveCart(){
 async function load(){
  let snap = await getDocs(collection(db,"products"));
  products = [];
-
  snap.forEach(doc=>{
    let d = doc.data();
-
    products.push({
      id: doc.id,
-     name: d.name || "",
-     price: Number(d.price) || 0,
-     category: d.category || "",
-     image: d.image || ""
+     name: d.name,
+     price: Number(d.price),
+     category: d.category,
+     image: d.image
    });
  });
-
- console.log("Products loaded:", products);
-
  show(products);
  render();
 }
@@ -214,7 +208,7 @@ function show(data){
  list.innerHTML=html;
 }
 
-/* CATEGORY FILTER */
+/* FILTER */
 window.filterCat=(cat)=>{
  if(cat==="All") show(products);
  else show(products.filter(p=>p.category && p.category.toLowerCase()===cat.toLowerCase()));
@@ -230,37 +224,37 @@ window.search=(q)=>{
 window.addToCart = (id)=>{
  let p = products.find(x => x.id === id);
  let item = cart.find(x=>x.id===p.id);
-
  if(item) item.qty++;
  else cart.push({...p,qty:1});
-
  saveCart();
  render();
 }
+
 /* QUANTITY */
 window.inc=(i)=>{ cart[i].qty++; saveCart(); render(); }
 window.dec=(i)=>{ if(cart[i].qty>1) cart[i].qty--; else cart.splice(i,1); saveCart(); render(); }
 
 /* RENDER CART */
 function render(){
- let html="",total=0;
+ let html="", total=0, qty=0;
  cart.forEach((i,ind)=>{
  total += i.price*i.qty;
+ qty += i.qty;
  html+=`${i.name}<br>
  ₹${i.price} x ${i.qty}
  <button onclick="inc(${ind})">+</button>
  <button onclick="dec(${ind})">-</button><hr>`;
  });
  items.innerHTML=html;
- total.innerText="Total ₹"+total;
- count.innerText=cart.length;
+ document.getElementById("totalText").innerText="Total ₹"+total;
+ document.getElementById("count").innerText=qty;
 }
 
-/* CART UI */
+/* CART */
 window.openCart=()=>{cartPopup.style.display="block"; render();}
 window.closeCart=()=>cartPopup.style.display="none";
 
-/* PLACE ORDER */
+/* ORDER */
 window.placeOrder = async ()=>{
  let n=name.value,p=phone.value,a=address.value,pin=pincode.value;
  if(!n||!p||!a||!pin||cart.length==0) return alert("Fill all details");
@@ -273,10 +267,8 @@ window.placeOrder = async ()=>{
   date:new Date().toLocaleString()
  });
 
- /* INVOICE */
  let w=window.open("");
- let html=`<h2>Azad Prime Medico</h2>
- Order ID:${ref.id}<hr>`;
+ let html=`<h2>Azad Prime Medico</h2>Order ID:${ref.id}<hr>`;
  cart.forEach(i=> html+=`${i.name} x${i.qty} = ₹${i.price*i.qty}<br>`);
  html+=`<hr>Total ₹${totalAmt}`;
  w.document.write(html);
