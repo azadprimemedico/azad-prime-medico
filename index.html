@@ -180,16 +180,21 @@ function saveCart(){
 async function load(){
  let snap = await getDocs(collection(db,"products"));
  products = [];
- snap.forEach(d=>{
-  let data = d.data();
-  products.push({
-    id:d.id,
-    name:data.name,
-    price:Number(data.price),
-    category:data.category,
-    image:data.image
-  });
+
+ snap.forEach(doc=>{
+   let d = doc.data();
+
+   products.push({
+     id: doc.id,
+     name: d.name || "",
+     price: Number(d.price) || 0,
+     category: d.category || "",
+     image: d.image || ""
+   });
  });
+
+ console.log("Products loaded:", products);
+
  show(products);
  render();
 }
