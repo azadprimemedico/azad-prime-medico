@@ -3,7 +3,7 @@
 <head>
 <title>Azad Prime Medico</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+ 
 <style>
 body {
     margin:0;
@@ -62,15 +62,7 @@ header {
     border-radius:20px;
 }
 
-.offers { display:flex; overflow:auto; padding:10px; }
-.offerCard {
-    min-width:220px;
-    background:white;
-    margin:5px;
-    padding:15px;
-    border-radius:12px;
-    font-weight:bold;
-}
+.category { text-align:center; padding:10px; }
 
 .products {
     display:flex;
@@ -96,9 +88,10 @@ button {
     background:#ff4d4d;
     color:white;
     border:none;
-    padding:8px;
+    padding:6px;
     border-radius:6px;
     cursor:pointer;
+    margin:2px;
 }
 
 #cartPopup {
@@ -142,10 +135,12 @@ button {
 <input type="text" placeholder="Search medicine..." onkeyup="search(this.value)">
 </div>
 
-<div class="offers">
-<div class="offerCard">💊 15% OFF Medicines</div>
-<div class="offerCard">🚚 Free Delivery ₹499+</div>
-<div class="offerCard">🔥 Buy 2 Get 1</div>
+<div class="category">
+<button onclick="filterCat('All')">All</button>
+<button onclick="filterCat('Tablet')">Tablet</button>
+<button onclick="filterCat('Syrup')">Syrup</button>
+<button onclick="filterCat('Injection')">Injection</button>
+<button onclick="filterCat('Device')">Device</button>
 </div>
 
 <div class="products" id="list"></div>
@@ -177,12 +172,10 @@ const db = getFirestore(app);
 let products = [];
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
-/* SAVE CART */
 function saveCart(){
  localStorage.setItem("cart", JSON.stringify(cart));
 }
 
-/* LOAD PRODUCTS */
 async function load(){
  let snap = await getDocs(collection(db,"products"));
  products = [];
@@ -193,7 +186,6 @@ async function load(){
  render();
 }
 
-/* SHOW */
 function show(data){
  let html="";
  data.forEach((p,index)=>{
@@ -201,98 +193,84 @@ function show(data){
  <div class="card">
  <img src="${p.image}">
  <h4>${p.name}</h4>
- ₹${p.price}
+ ₹${p.price}<br>
  <button onclick="addToCart(${index})">Add</button>
  </div>`;
  });
- document.getElementById("list").innerHTML=html;
+ list.innerHTML=html;
 }
 
-/* SEARCH */
+window.filterCat=(cat)=>{
+ if(cat=="All") show(products);
+ else show(products.filter(p=>p.category==cat));
+}
+
 window.search = (q)=>{
  let f = products.filter(p=>p.name.toLowerCase().includes(q.toLowerCase()));
  show(f);
 }
 
-/* ADD CART */
 window.addToCart = (index)=>{
  let p = products[index];
-
  let item = cart.find(x=>x.id===p.id);
- if(item){
-   item.qty++;
- } else {
-   cart.push({...p,qty:1});
- }
-
+ if(item) item.qty++;
+ else cart.push({...p,qty:1});
  saveCart();
  render();
 }
 
-/* RENDER */
+window.inc=(i)=>{ cart[i].qty++; saveCart(); render(); }
+window.dec=(i)=>{ if(cart[i].qty>1) cart[i].qty--; else cart.splice(i,1); saveCart(); render(); }
+
 function render(){
  let html="",total=0;
-
  cart.forEach((i,ind)=>{
  total += i.price*i.qty;
- html+=`${i.name} x${i.qty} = ₹${i.price*i.qty}
- <button onclick="removeItem(${ind})">X</button><br>`;
+ html+=`${i.name}<br>
+ ₹${i.price} x ${i.qty}
+ <button onclick="inc(${ind})">+</button>
+ <button onclick="dec(${ind})">-</button><hr>`;
  });
-
- document.getElementById("items").innerHTML=html;
- document.getElementById("total").innerText="Total ₹"+total;
- document.getElementById("count").innerText=cart.length;
+ items.innerHTML=html;
+ total.innerText="Total ₹"+total;
+ count.innerText=cart.length;
 }
 
-/* REMOVE */
-window.removeItem = (i)=>{
- cart.splice(i,1);
- saveCart();
- render();
-}
-
-/* CART UI */
 window.openCart=()=>{cartPopup.style.display="block"; render();}
 window.closeCart=()=>cartPopup.style.display="none";
 
-/* PLACE ORDER */
 window.placeOrder = async function(){
+ let n=name.value,p=phone.value,a=address.value,pin=pincode.value;
+ if(!n||!p||!a||!pin||cart.length==0) return alert("Fill all details");
 
- let n = document.getElementById("name").value.trim();
- let p = document.getElementById("phone").value.trim();
- let a = document.getElementById("address").value.trim();
- let pin = document.getElementById("pincode").value.trim();
+ let totalAmt=cart.reduce((s,i)=>s+i.price*i.qty,0);
 
- if(n=="" || p=="" || a=="" || pin=="" || cart.length==0){
-  alert("Fill all details + add products");
-  return;
- }
-
- let total = cart.reduce((s,i)=>s+i.price*i.qty,0);
-
- await addDoc(collection(db,"orders"),{
-  name:n, phone:p, address:a, pincode:pin,
-  items:cart, total,
-  status:"Pending",
+ let ref=await addDoc(collection(db,"orders"),{
+  name:n,phone:p,address:a,pincode:pin,
+  items:cart,total:totalAmt,status:"Pending",
   date:new Date().toLocaleString()
  });
 
- alert("Order Placed ✅");
+ let w=window.open("");
+ let html=`<h2>Azad Prime Medico</h2>Order ID:${ref.id}<hr>`;
+ cart.forEach(i=> html+=`${i.name} x${i.qty} = ₹${i.price*i.qty}<br>`);
+ html+=`<hr>Total ₹${totalAmt}`;
+ w.document.write(html);
+ w.print();
 
  cart=[];
  saveCart();
  render();
  closeCart();
+ alert("Order Placed");
 }
 
-/* TRACK */
 window.track = ()=>{
  let phone = document.getElementById("phone").value;
  if(!phone) return alert("Enter phone");
  window.open("orders.html?phone="+phone);
 }
 
-/* UPI */
 window.payNow = ()=>{
  let total = cart.reduce((s,i)=>s+i.price*i.qty,0);
  window.open("upi://pay?pa=gulamhamid164@okaxis&pn=AzadPrimeMedico&am="+total);
@@ -300,6 +278,5 @@ window.payNow = ()=>{
 
 load();
 </script>
-
 </body>
 </html>
