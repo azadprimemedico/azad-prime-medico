@@ -2,297 +2,35 @@
 <html>
 <head>
 <title>Azad Prime Medico</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-body {
-    margin:0;
-    font-family:'Segoe UI',Arial;
-    background: linear-gradient(-45deg,#e6f7ff,#f0fff0,#fff5f5,#eef3f8);
-    background-size:400% 400%;
-    animation: bg 10s infinite;
-}
-@keyframes bg {
-0%{background-position:0% 50%;}
-50%{background-position:100% 50%;}
-100%{background-position:0% 50%;}
-}
-
-header {
-    background:white;
-    padding:12px 20px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    box-shadow:0 2px 10px rgba(0,0,0,0.1);
-}
-
-.logo { display:flex; align-items:center; gap:10px; }
-.logo img { height:60px; }
-
-.cartBtn {
-    background:linear-gradient(45deg,#0f9b0f,#38ef7d);
-    color:white;
-    padding:10px 15px;
-    border-radius:20px;
-    cursor:pointer;
-    font-weight:bold;
-}
-
-.hero {
-    background:linear-gradient(135deg,#0f9b0f,#ff4d4d);
-    color:white;
-    padding:40px;
-    text-align:center;
-}
-
-.inputs { text-align:center; padding:15px; }
-.inputs input {
-    padding:12px;
-    margin:5px;
-    width:45%;
-    border-radius:20px;
-    border:1px solid #ccc;
-}
-
-.searchBox { text-align:center; padding:10px; }
-.searchBox input {
-    width:80%;
-    padding:10px;
-    border-radius:20px;
-}
-
-.category { text-align:center; padding:10px; }
-
-.products {
-    display:flex;
-    flex-wrap:wrap;
-    justify-content:center;
-}
-.card {
-    background:white;
-    width:180px;
-    margin:10px;
-    padding:10px;
-    border-radius:12px;
-    text-align:center;
-    box-shadow:0 3px 8px rgba(0,0,0,0.1);
-}
-.card img {
-    width:100%;
-    height:130px;
-    object-fit:cover;
-}
-
-button {
-    background:#ff4d4d;
-    color:white;
-    border:none;
-    padding:6px;
-    border-radius:6px;
-    cursor:pointer;
-    margin:2px;
-}
-
-#cartPopup {
-    display:none;
-    position:fixed;
-    right:0;
-    top:0;
-    width:320px;
-    height:100%;
-    background:white;
-    padding:15px;
-    overflow:auto;
-    box-shadow:-3px 0 10px rgba(0,0,0,0.3);
-}
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
 <header>
-<div class="logo">
-<img src="logo.png">
 <h2>Azad Prime Medico</h2>
-</div>
-<div class="cartBtn" onclick="openCart()">🛒 (<span id="count">0</span>)</div>
+<button onclick="openCart()">Cart (<span id="count">0</span>)</button>
 </header>
 
-<div class="hero">
-<h2>💊 Online Medical Store</h2>
-<p>Fast Delivery | Genuine Medicines</p>
-</div>
-
-<div class="inputs">
+<div class="form">
 <input id="name" placeholder="Your Name">
 <input id="phone" placeholder="Mobile Number">
 <input id="address" placeholder="Delivery Address">
 <input id="pincode" placeholder="Pincode">
 </div>
 
-<div class="searchBox">
-<input type="text" placeholder="Search medicine..." onkeyup="search(this.value)">
-</div>
+<input id="search" placeholder="Search medicine..." onkeyup="searchProduct()">
 
-<div class="category">
-<button onclick="filterCat('All')">All</button>
-<button onclick="filterCat('Tablet')">Tablet</button>
-<button onclick="filterCat('Syrup')">Syrup</button>
-<button onclick="filterCat('Injection')">Injection</button>
-<button onclick="filterCat('Device')">Device</button>
-</div>
+<div id="products" class="products"></div>
 
-<div class="products" id="list"></div>
-
-<div id="cartPopup">
-<h3>🛒 Cart</h3>
-<div id="items"></div>
-<h4 id="totalText">Total ₹0</h4>
-
+<div id="cartPopup" class="cart">
+<h3>Cart</h3>
+<div id="cartItems"></div>
+<h4 id="total">Total ₹0</h4>
 <button onclick="placeOrder()">Place Order</button>
-<button onclick="payNow()">Pay UPI</button>
-<button onclick="track()">Track Order</button>
+<button onclick="trackOrder()">Track Order</button>
 <button onclick="closeCart()">Close</button>
 </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "YOUR_KEY",
-  authDomain: "azad-prime-medico.firebaseapp.com",
-  projectId: "azad-prime-medico"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-let products = [];
-let cart = JSON.parse(localStorage.getItem("cart")) || [];
-
-function saveCart(){
- localStorage.setItem("cart", JSON.stringify(cart));
-}
-
-/* LOAD PRODUCTS */
-async function load(){
- let snap = await getDocs(collection(db,"products"));
- products = [];
- snap.forEach(doc=>{
-   let d = doc.data();
-   products.push({
-     id: doc.id,
-     name: d.name,
-     price: Number(d.price),
-     category: d.category,
-     image: d.image
-   });
- });
- show(products);
- render();
-}
-
-/* SHOW PRODUCTS */
-function show(data){
- let html="";
- data.forEach((p)=>{
- html+=`
- <div class="card">
- <img src="${p.image}">
- <h4>${p.name}</h4>
- ₹${p.price}<br>
- <button onclick="addToCart('${p.id}')">Add</button>
- </div>`;
- });
- list.innerHTML=html;
-}
-
-/* FILTER */
-window.filterCat=(cat)=>{
- if(cat==="All") show(products);
- else show(products.filter(p=>p.category && p.category.toLowerCase()===cat.toLowerCase()));
-}
-
-/* SEARCH */
-window.search=(q)=>{
- let f=products.filter(p=>p.name.toLowerCase().includes(q.toLowerCase()));
- show(f);
-}
-
-/* ADD CART */
-window.addToCart = (id)=>{
- let p = products.find(x => x.id === id);
- let item = cart.find(x=>x.id===p.id);
- if(item) item.qty++;
- else cart.push({...p,qty:1});
- saveCart();
- render();
-}
-
-/* QUANTITY */
-window.inc=(i)=>{ cart[i].qty++; saveCart(); render(); }
-window.dec=(i)=>{ if(cart[i].qty>1) cart[i].qty--; else cart.splice(i,1); saveCart(); render(); }
-
-/* RENDER CART */
-function render(){
- let html="", total=0, qty=0;
- cart.forEach((i,ind)=>{
- total += i.price*i.qty;
- qty += i.qty;
- html+=`${i.name}<br>
- ₹${i.price} x ${i.qty}
- <button onclick="inc(${ind})">+</button>
- <button onclick="dec(${ind})">-</button><hr>`;
- });
- items.innerHTML=html;
- document.getElementById("totalText").innerText="Total ₹"+total;
- document.getElementById("count").innerText=qty;
-}
-
-/* CART */
-window.openCart=()=>{cartPopup.style.display="block"; render();}
-window.closeCart=()=>cartPopup.style.display="none";
-
-/* ORDER */
-window.placeOrder = async ()=>{
- let n=name.value,p=phone.value,a=address.value,pin=pincode.value;
- if(!n||!p||!a||!pin||cart.length==0) return alert("Fill all details");
-
- let totalAmt=cart.reduce((s,i)=>s+i.price*i.qty,0);
-
- let ref=await addDoc(collection(db,"orders"),{
-  name:n,phone:p,address:a,pincode:pin,
-  items:cart,total:totalAmt,status:"Pending",
-  date:new Date().toLocaleString()
- });
-
- let w=window.open("");
- let html=`<h2>Azad Prime Medico</h2>Order ID:${ref.id}<hr>`;
- cart.forEach(i=> html+=`${i.name} x${i.qty} = ₹${i.price*i.qty}<br>`);
- html+=`<hr>Total ₹${totalAmt}`;
- w.document.write(html);
- w.print();
-
- cart=[];
- saveCart();
- render();
- closeCart();
- alert("Order Placed");
-}
-
-window.track=()=>{
- let phone=document.getElementById("phone").value;
- if(!phone) return alert("Enter phone");
- window.open("orders.html?phone="+phone);
-}
-
-window.payNow=()=>{
- let total=cart.reduce((s,i)=>s+i.price*i.qty,0);
- window.open("upi://pay?pa=gulamhamid164@okaxis&pn=AzadPrimeMedico&am="+total);
-}
-
-load();
-</script>
+<script type="module" src="script.js"></script>
 </body>
 </html>
