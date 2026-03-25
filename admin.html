@@ -65,7 +65,11 @@ function login(){ auth.signInWithEmailAndPassword(email.value,password.value); }
 function logout(){ auth.signOut(); }
 
 auth.onAuthStateChanged(user=>{
- if(user){ loginBox.style.display="none"; adminPanel.style.display="block"; loadAll(); }
+ if(user){
+  loginBox.style.display="none";
+  adminPanel.style.display="block";
+  loadAll();
+ }
 });
 
 /* DASHBOARD */
