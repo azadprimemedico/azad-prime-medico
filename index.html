@@ -202,13 +202,13 @@ async function load(){
 /* SHOW PRODUCTS */
 function show(data){
  let html="";
- data.forEach((p,index)=>{
+ data.forEach((p)=>{
  html+=`
  <div class="card">
  <img src="${p.image}">
  <h4>${p.name}</h4>
  ₹${p.price}<br>
- <button onclick="addToCart(${index})">Add</button>
+ <button onclick="addToCart('${p.id}')">Add</button>
  </div>`;
  });
  list.innerHTML=html;
