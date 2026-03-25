@@ -227,15 +227,16 @@ window.search=(q)=>{
 }
 
 /* ADD CART */
-window.addToCart=(index)=>{
- let p=products[index];
- let item=cart.find(x=>x.id===p.id);
+window.addToCart = (id)=>{
+ let p = products.find(x => x.id === id);
+ let item = cart.find(x=>x.id===p.id);
+
  if(item) item.qty++;
  else cart.push({...p,qty:1});
+
  saveCart();
  render();
 }
-
 /* QUANTITY */
 window.inc=(i)=>{ cart[i].qty++; saveCart(); render(); }
 window.dec=(i)=>{ if(cart[i].qty>1) cart[i].qty--; else cart.splice(i,1); saveCart(); render(); }
