@@ -6,30 +6,52 @@
 </head>
 <body>
 
-<header>
-<h2>Azad Prime Medico</h2>
-<button onclick="openCart()">Cart (<span id="count">0</span>)</button>
+<!-- HEADER -->
+<header class="header">
+<div class="logo">Azad Prime Medico</div>
+<input type="text" id="search" placeholder="Search medicines..." onkeyup="searchProduct()">
+<div class="cart-btn" onclick="openCart()">
+🛒 <span id="count">0</span>
+</div>
 </header>
 
-<div class="form">
-<input id="name" placeholder="Your Name">
-<input id="phone" placeholder="Mobile Number">
-<input id="address" placeholder="Delivery Address">
-<input id="pincode" placeholder="Pincode">
+<!-- HERO -->
+<section class="hero">
+<h1>Online Medical Store</h1>
+<p>Fast Delivery | Genuine Medicines | Best Prices</p>
+</section>
+
+<!-- CATEGORY -->
+<div class="categories">
+<button onclick="filterCategory('all')">All</button>
+<button onclick="filterCategory('tablet')">Tablets</button>
+<button onclick="filterCategory('syrup')">Syrup</button>
+<button onclick="filterCategory('equipment')">Equipment</button>
+<button onclick="filterCategory('personal')">Personal Care</button>
 </div>
 
-<input id="search" placeholder="Search medicine..." onkeyup="searchProduct()">
-
+<!-- PRODUCTS -->
 <div id="products" class="products"></div>
 
+<!-- CART POPUP -->
 <div id="cartPopup" class="cart">
-<h3>Cart</h3>
+<h3>Your Cart</h3>
 <div id="cartItems"></div>
 <h4 id="total">Total ₹0</h4>
+
+<input id="name" placeholder="Your Name">
+<input id="phone" placeholder="Mobile">
+<input id="address" placeholder="Address">
+<input id="pincode" placeholder="Pincode">
+
 <button onclick="placeOrder()">Place Order</button>
-<button onclick="trackOrder()">Track Order</button>
 <button onclick="closeCart()">Close</button>
 </div>
+
+<!-- FOOTER -->
+<footer>
+<p>© 2026 Azad Prime Medico | All Rights Reserved</p>
+</footer>
 
 <script type="module" src="script.js"></script>
 </body>
