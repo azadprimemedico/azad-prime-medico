@@ -176,16 +176,25 @@ function saveCart(){
  localStorage.setItem("cart", JSON.stringify(cart));
 }
 
+/* LOAD PRODUCTS */
 async function load(){
  let snap = await getDocs(collection(db,"products"));
  products = [];
  snap.forEach(d=>{
-  products.push({id:d.id,...d.data()});
+  let data = d.data();
+  products.push({
+    id:d.id,
+    name:data.name,
+    price:Number(data.price),
+    category:data.category,
+    image:data.image
+  });
  });
  show(products);
  render();
 }
 
+/* SHOW PRODUCTS */
 function show(data){
  let html="";
  data.forEach((p,index)=>{
@@ -200,28 +209,33 @@ function show(data){
  list.innerHTML=html;
 }
 
+/* CATEGORY FILTER */
 window.filterCat=(cat)=>{
- if(cat=="All") show(products);
- else show(products.filter(p=>p.category==cat));
+ if(cat==="All") show(products);
+ else show(products.filter(p=>p.category && p.category.toLowerCase()===cat.toLowerCase()));
 }
 
-window.search = (q)=>{
- let f = products.filter(p=>p.name.toLowerCase().includes(q.toLowerCase()));
+/* SEARCH */
+window.search=(q)=>{
+ let f=products.filter(p=>p.name.toLowerCase().includes(q.toLowerCase()));
  show(f);
 }
 
-window.addToCart = (index)=>{
- let p = products[index];
- let item = cart.find(x=>x.id===p.id);
+/* ADD CART */
+window.addToCart=(index)=>{
+ let p=products[index];
+ let item=cart.find(x=>x.id===p.id);
  if(item) item.qty++;
  else cart.push({...p,qty:1});
  saveCart();
  render();
 }
 
+/* QUANTITY */
 window.inc=(i)=>{ cart[i].qty++; saveCart(); render(); }
 window.dec=(i)=>{ if(cart[i].qty>1) cart[i].qty--; else cart.splice(i,1); saveCart(); render(); }
 
+/* RENDER CART */
 function render(){
  let html="",total=0;
  cart.forEach((i,ind)=>{
@@ -236,10 +250,12 @@ function render(){
  count.innerText=cart.length;
 }
 
+/* CART UI */
 window.openCart=()=>{cartPopup.style.display="block"; render();}
 window.closeCart=()=>cartPopup.style.display="none";
 
-window.placeOrder = async function(){
+/* PLACE ORDER */
+window.placeOrder = async ()=>{
  let n=name.value,p=phone.value,a=address.value,pin=pincode.value;
  if(!n||!p||!a||!pin||cart.length==0) return alert("Fill all details");
 
@@ -251,8 +267,10 @@ window.placeOrder = async function(){
   date:new Date().toLocaleString()
  });
 
+ /* INVOICE */
  let w=window.open("");
- let html=`<h2>Azad Prime Medico</h2>Order ID:${ref.id}<hr>`;
+ let html=`<h2>Azad Prime Medico</h2>
+ Order ID:${ref.id}<hr>`;
  cart.forEach(i=> html+=`${i.name} x${i.qty} = ₹${i.price*i.qty}<br>`);
  html+=`<hr>Total ₹${totalAmt}`;
  w.document.write(html);
@@ -265,14 +283,14 @@ window.placeOrder = async function(){
  alert("Order Placed");
 }
 
-window.track = ()=>{
- let phone = document.getElementById("phone").value;
+window.track=()=>{
+ let phone=document.getElementById("phone").value;
  if(!phone) return alert("Enter phone");
  window.open("orders.html?phone="+phone);
 }
 
-window.payNow = ()=>{
- let total = cart.reduce((s,i)=>s+i.price*i.qty,0);
+window.payNow=()=>{
+ let total=cart.reduce((s,i)=>s+i.price*i.qty,0);
  window.open("upi://pay?pa=gulamhamid164@okaxis&pn=AzadPrimeMedico&am="+total);
 }
 
