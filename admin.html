@@ -4,61 +4,19 @@
 <title>Admin Panel - Azad Prime Medico</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
 <style>
 body { font-family: Arial; background:#f5f5f5; padding:20px; }
-
-.box {
-    max-width:500px;
-    margin:auto;
-    background:white;
-    padding:20px;
-    border-radius:10px;
-    margin-bottom:20px;
-}
-
-input, textarea {
-    width:100%;
-    padding:10px;
-    margin:10px 0;
-}
-
-button {
-    width:100%;
-    padding:10px;
-    background:green;
-    color:white;
-    border:none;
-    margin-top:5px;
-    cursor:pointer;
-}
-
-.logout { background:red; }
-
-.card {
-    background:white;
-    margin:10px;
-    padding:15px;
-    border-radius:10px;
-    text-align:center;
-}
-
-select {
-    margin-top:10px;
-    padding:5px;
-}
-
-#adminPanel { display:none; }
+.box { max-width:500px; margin:auto; background:white; padding:20px; border-radius:10px; margin-bottom:20px; }
+.card { background:white; margin:10px; padding:15px; border-radius:10px; text-align:center; }
 </style>
 </head>
 
 <body>
 
-<!-- LOGIN -->
 <div class="box" id="loginBox">
 <h2>Admin Login</h2>
 <input type="email" id="email" placeholder="Email">
@@ -66,176 +24,122 @@ select {
 <button onclick="login()">Login</button>
 </div>
 
-<!-- ADMIN PANEL -->
-<div id="adminPanel">
+<div id="adminPanel" style="display:none;">
 
 <div class="box">
-<h2>Product Management</h2>
-
-<input type="text" id="name" placeholder="Product Name">
-<input type="number" id="price" placeholder="Price">
-<input type="text" id="category" placeholder="Category">
-<input type="text" id="image" placeholder="Image URL">
-
-<button onclick="addProduct()">Save Product</button>
-<button class="logout" onclick="logout()">Logout</button>
-
-<h3>Bulk Upload</h3>
-<textarea id="bulkData" placeholder="Name,Price,Category,ImageURL"></textarea>
-<button onclick="bulkUpload()">Upload Bulk</button>
+<h2>Dashboard</h2>
+Total Orders: <span id="totalOrders"></span><br>
+Total Revenue: ₹<span id="revenue"></span>
 </div>
 
-<h3 style="text-align:center;">Products</h3>
+<div class="box">
+<h2>Add Product</h2>
+<input id="name" placeholder="Name">
+<input id="price" placeholder="Price">
+<input id="category" placeholder="Category">
+<input id="image" placeholder="Image URL">
+<button onclick="addProduct()">Add</button>
+<button onclick="logout()">Logout</button>
+</div>
+
+<h3>Products</h3>
 <div id="productList"></div>
 
-<h3 style="text-align:center;">Orders</h3>
+<h3>Orders</h3>
 <div id="orderList"></div>
 
 </div>
 
 <script>
 const firebaseConfig = {
-  apiKey: "AIzaSyCqpzQlN_qu53CKbPa_XFDnoyN6SgxhKRw",
+  apiKey: "YOUR_KEY",
   authDomain: "azad-prime-medico.firebaseapp.com",
   projectId: "azad-prime-medico"
 };
 
 firebase.initializeApp(firebaseConfig);
-
 const db = firebase.firestore();
 const auth = firebase.auth();
 
-// 🔐 LOGIN
-function login() {
-    let email = document.getElementById("email").value.trim();
-    let password = document.getElementById("password").value.trim();
+function login(){ auth.signInWithEmailAndPassword(email.value,password.value); }
+function logout(){ auth.signOut(); }
 
-    if (!email || !password) {
-        alert("Enter Email & Password");
-        return;
-    }
-
-    auth.signInWithEmailAndPassword(email, password)
-    .then(() => {
-        alert("Login Successful ✅");
-    })
-    .catch((err) => {
-        alert("Login Failed ❌: " + err.message);
-    });
-}
-
-// 🚪 LOGOUT
-function logout(){
-    auth.signOut();
-}
-
-// 🔁 AUTH STATE
-auth.onAuthStateChanged(user => {
-    if (user) {
-        document.getElementById("loginBox").style.display = "none";
-        document.getElementById("adminPanel").style.display = "block";
-        loadProducts();
-        loadOrders();
-    } else {
-        document.getElementById("loginBox").style.display = "block";
-        document.getElementById("adminPanel").style.display = "none";
-    }
+auth.onAuthStateChanged(user=>{
+ if(user){ loginBox.style.display="none"; adminPanel.style.display="block"; loadAll(); }
 });
 
-// ➕ ADD PRODUCT
-function addProduct() {
-    let name = document.getElementById("name").value;
-    let price = parseFloat(document.getElementById("price").value);
-    let category = document.getElementById("category").value;
-    let image = document.getElementById("image").value;
-
-    if (!name || !price || !category || !image) {
-        alert("Fill all fields");
-        return;
-    }
-
-    db.collection("products").add({ name, price, category, image })
-    .then(() => {
-        alert("Product Added ✅");
-        loadProducts();
-    });
+/* DASHBOARD */
+function loadDashboard(){
+ db.collection("orders").get().then(s=>{
+  let total=0,rev=0;
+  s.forEach(d=>{ total++; rev+=d.data().total; });
+  totalOrders.innerText=total;
+  revenue.innerText=rev;
+ });
 }
 
-// 📦 LOAD PRODUCTS
-function loadProducts() {
-    db.collection("products").get().then(snapshot => {
-        let html = "";
-        snapshot.forEach(doc => {
-            let p = doc.data();
-            html += `
-            <div class="card">
-                <img src="${p.image}" width="100"><br>
-                <b>${p.name}</b><br>
-                ₹${p.price}<br>
-                ${p.category}
-            </div>`;
-        });
-        document.getElementById("productList").innerHTML = html;
-    });
+/* ADD PRODUCT */
+function addProduct(){
+ db.collection("products").add({
+  name:name.value,
+  price:parseFloat(price.value),
+  category:category.value,
+  image:image.value
+ }).then(loadProducts);
 }
 
-// 📦 LOAD ORDERS WITH STATUS UPDATE
+/* DELETE PRODUCT */
+function deleteProduct(id){
+ db.collection("products").doc(id).delete().then(loadProducts);
+}
+
+/* LOAD PRODUCTS */
+function loadProducts(){
+ db.collection("products").get().then(s=>{
+  let html="";
+  s.forEach(d=>{
+   let p=d.data();
+   html+=`
+   <div class="card">
+   <img src="${p.image}" width="80"><br>
+   ${p.name}<br>₹${p.price}<br>
+   <button onclick="deleteProduct('${d.id}')">Delete</button>
+   </div>`;
+  });
+  productList.innerHTML=html;
+ });
+}
+
+/* LOAD ORDERS */
 function loadOrders(){
-    db.collection("orders").get().then(snapshot => {
-        let html="";
-        snapshot.forEach(doc=>{
-            let o=doc.data();
-
-            html+=`
-            <div class="card">
-            <b>ID:</b> ${doc.id}<br>
-            <b>Name:</b> ${o.name}<br>
-            <b>Phone:</b> ${o.phone}<br>
-            <b>Address:</b> ${o.address || ""}<br>
-            <b>Total:</b> ₹${o.total}<br>
-            <b>Status:</b> ${o.status || "Pending"}<br>
-
-            <select onchange="updateStatus('${doc.id}', this.value)">
-                <option value="Pending" ${o.status=="Pending"?"selected":""}>Pending</option>
-                <option value="Packed" ${o.status=="Packed"?"selected":""}>Packed</option>
-                <option value="Out for delivery" ${o.status=="Out for delivery"?"selected":""}>Out for delivery</option>
-                <option value="Delivered" ${o.status=="Delivered"?"selected":""}>Delivered</option>
-            </select>
-            </div>`;
-        });
-
-        document.getElementById("orderList").innerHTML=html;
-    });
+ db.collection("orders").get().then(s=>{
+  let html="";
+  s.forEach(d=>{
+   let o=d.data();
+   html+=`
+   <div class="card">
+   ${o.name} - ₹${o.total}<br>
+   Status: ${o.status}<br>
+   <select onchange="updateStatus('${d.id}',this.value)">
+   <option>Pending</option>
+   <option>Packed</option>
+   <option>Out for delivery</option>
+   <option>Delivered</option>
+   </select>
+   </div>`;
+  });
+  orderList.innerHTML=html;
+ });
 }
 
-// 🔄 UPDATE STATUS
-function updateStatus(id, status){
-    db.collection("orders").doc(id).update({status:status})
-    .then(()=>{
-        alert("Status Updated ✅");
-        loadOrders();
-    });
+function updateStatus(id,status){
+ db.collection("orders").doc(id).update({status});
 }
 
-// 📥 BULK
-async function bulkUpload() {
-    let data = document.getElementById("bulkData").value.trim();
-    let lines = data.split("\n");
-
-    for (let line of lines) {
-        let [name, price, category, image] = line.split(",");
-        if (!name) continue;
-
-        await db.collection("products").add({
-            name: name.trim(),
-            price: parseFloat(price),
-            category: category.trim(),
-            image: image.trim()
-        });
-    }
-
-    alert("Bulk Upload Done ✅");
-    loadProducts();
+function loadAll(){
+ loadDashboard();
+ loadProducts();
+ loadOrders();
 }
 </script>
 
