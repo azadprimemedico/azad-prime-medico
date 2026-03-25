@@ -18,7 +18,6 @@ body {
 100%{background-position:0% 50%;}
 }
 
-/* HEADER */
 header {
     background:white;
     padding:12px 20px;
@@ -27,18 +26,10 @@ header {
     align-items:center;
     box-shadow:0 2px 10px rgba(0,0,0,0.1);
 }
-.logo {
-    display:flex;
-    align-items:center;
-    gap:10px;
-}
-.logo img { height:60px; }
-.logo h2 {
-    margin:0;
-    color:#0f9b0f;
-}
 
-/* CART BUTTON */
+.logo { display:flex; align-items:center; gap:10px; }
+.logo img { height:60px; }
+
 .cartBtn {
     background:linear-gradient(45deg,#0f9b0f,#38ef7d);
     color:white;
@@ -48,7 +39,6 @@ header {
     font-weight:bold;
 }
 
-/* HERO */
 .hero {
     background:linear-gradient(135deg,#0f9b0f,#ff4d4d);
     color:white;
@@ -56,7 +46,6 @@ header {
     text-align:center;
 }
 
-/* INPUT */
 .inputs { text-align:center; padding:15px; }
 .inputs input {
     padding:12px;
@@ -66,7 +55,6 @@ header {
     border:1px solid #ccc;
 }
 
-/* SEARCH */
 .searchBox { text-align:center; padding:10px; }
 .searchBox input {
     width:80%;
@@ -74,7 +62,6 @@ header {
     border-radius:20px;
 }
 
-/* OFFERS */
 .offers { display:flex; overflow:auto; padding:10px; }
 .offerCard {
     min-width:220px;
@@ -85,7 +72,6 @@ header {
     font-weight:bold;
 }
 
-/* PRODUCTS */
 .products {
     display:flex;
     flex-wrap:wrap;
@@ -106,7 +92,6 @@ header {
     object-fit:cover;
 }
 
-/* BUTTON */
 button {
     background:#ff4d4d;
     color:white;
@@ -116,7 +101,6 @@ button {
     cursor:pointer;
 }
 
-/* CART */
 #cartPopup {
     display:none;
     position:fixed;
@@ -150,6 +134,8 @@ button {
 <div class="inputs">
 <input id="name" placeholder="Your Name">
 <input id="phone" placeholder="Mobile Number">
+<input id="address" placeholder="Delivery Address">
+<input id="pincode" placeholder="Pincode">
 </div>
 
 <div class="searchBox">
@@ -179,9 +165,8 @@ button {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
 import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
-/* FIREBASE */
 const firebaseConfig = {
-  apiKey: "AIzaSyCqpzQlN_qu53CKbPa_XFDnoyN6SgxhKRw",
+  apiKey: "YOUR_KEY",
   authDomain: "azad-prime-medico.firebaseapp.com",
   projectId: "azad-prime-medico"
 };
@@ -190,9 +175,14 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 let products = [];
-let cart = [];
+let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
-/* LOAD */
+/* SAVE CART */
+function saveCart(){
+ localStorage.setItem("cart", JSON.stringify(cart));
+}
+
+/* LOAD PRODUCTS */
 async function load(){
  let snap = await getDocs(collection(db,"products"));
  products = [];
@@ -200,6 +190,7 @@ async function load(){
   products.push({id:d.id,...d.data()});
  });
  show(products);
+ render();
 }
 
 /* SHOW */
@@ -223,7 +214,7 @@ window.search = (q)=>{
  show(f);
 }
 
-/* ADD CART FIXED */
+/* ADD CART */
 window.addToCart = (index)=>{
  let p = products[index];
 
@@ -234,6 +225,7 @@ window.addToCart = (index)=>{
    cart.push({...p,qty:1});
  }
 
+ saveCart();
  render();
 }
 
@@ -255,6 +247,7 @@ function render(){
 /* REMOVE */
 window.removeItem = (i)=>{
  cart.splice(i,1);
+ saveCart();
  render();
 }
 
@@ -267,41 +260,27 @@ window.placeOrder = async function(){
 
  let n = document.getElementById("name").value.trim();
  let p = document.getElementById("phone").value.trim();
+ let a = document.getElementById("address").value.trim();
+ let pin = document.getElementById("pincode").value.trim();
 
- if(n=="" || p=="" || cart.length==0){
-  alert("Enter Name + Phone + Add Products");
+ if(n=="" || p=="" || a=="" || pin=="" || cart.length==0){
+  alert("Fill all details + add products");
   return;
  }
 
  let total = cart.reduce((s,i)=>s+i.price*i.qty,0);
 
- let ref = await addDoc(collection(db,"orders"),{
-  name:n, phone:p, items:cart, total,
-  status:"Pending", date:new Date().toLocaleString()
+ await addDoc(collection(db,"orders"),{
+  name:n, phone:p, address:a, pincode:pin,
+  items:cart, total,
+  status:"Pending",
+  date:new Date().toLocaleString()
  });
-
- /* INVOICE */
- let html = `<h2>Azad Prime Medico</h2>
- Order ID: ${ref.id}<br>Name:${n}<br>Phone:${p}<hr>`;
-
- cart.forEach(i=>{
-   html+=`${i.name} x${i.qty} = ₹${i.price*i.qty}<br>`;
- });
-
- html+=`<hr>Total ₹${total}`;
-
- let w = window.open("");
- w.document.write(html);
- w.document.close();
- w.print();
-
- /* WHATSAPP */
- let msg=`Order ID:${ref.id}%0AName:${n}%0ATotal:₹${total}`;
- window.open("https://wa.me/919108417969?text="+msg);
 
  alert("Order Placed ✅");
 
  cart=[];
+ saveCart();
  render();
  closeCart();
 }
