@@ -1,17 +1,23 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Admin</title>
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+<h1>Admin Dashboard</h1>
+
+<div class="dashboard">
+  <div class="box">Total Orders: <span id="totalOrders">0</span></div>
+  <div class="box">Revenue: ₹<span id="revenue">0</span></div>
+</div>
+
 <h2>Add Product</h2>
-
-<input id="name" placeholder="Name"><br>
-<input id="price" placeholder="Price"><br>
-<input id="category" placeholder="Category"><br>
-<input id="image" placeholder="Image URL"><br>
-
+<input id="pname" placeholder="Product Name">
+<input id="pprice" placeholder="Price">
+<input id="pcategory" placeholder="Category">
+<input id="pimage" placeholder="Image URL">
 <button onclick="addProduct()">Add Product</button>
 
 <script type="module" src="admin.js"></script>
