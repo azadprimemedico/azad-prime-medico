@@ -1,19 +1,22 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Admin Panel</title>
+<title>Admin Dashboard</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<h2>Add Product</h2>
-<input id="pname" placeholder="Name">
-<input id="price" placeholder="Price">
-<input id="category" placeholder="Category">
-<input id="image" placeholder="Image URL">
-<button onclick="addProduct()">Add</button>
+<h2>Admin Dashboard</h2>
 
-<h2>Products</h2>
-<div id="list"></div>
+<h3>Add Product</h3>
+<input id="pname" placeholder="Name">
+<input id="pprice" placeholder="Price">
+<input id="pcategory" placeholder="Category">
+<input type="file" id="pimage">
+<button onclick="addProduct()">Add Product</button>
+
+<h3>Orders</h3>
+<div id="orders"></div>
 
 <script type="module" src="admin.js"></script>
 </body>
