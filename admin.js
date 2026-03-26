@@ -1,15 +1,35 @@
 import { db } from "./firebase.js";
-import { collection, addDoc } 
+import { collection, addDoc, getDocs }
 from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
 window.addProduct = async ()=>{
- await addDoc(collection(db,"products"),{
-  name:name.value,
-  price:Number(price.value),
-  category:category.value,
-  image:image.value,
-  stock:10
- });
+  let name = document.getElementById("pname").value;
+  let price = document.getElementById("pprice").value;
+  let category = document.getElementById("pcategory").value;
+  let image = document.getElementById("pimage").value;
 
- alert("Product Added");
+  await addDoc(collection(db,"products"),{
+    name,
+    price: Number(price),
+    category,
+    image
+  });
+
+  alert("Product Added");
 }
+
+async function loadDashboard(){
+  const snap = await getDocs(collection(db,"orders"));
+
+  let orders = snap.size;
+  let revenue = 0;
+
+  snap.forEach(doc=>{
+    revenue += doc.data().total;
+  });
+
+  document.getElementById("totalOrders").innerText = orders;
+  document.getElementById("revenue").innerText = revenue;
+}
+
+loadDashboard();
