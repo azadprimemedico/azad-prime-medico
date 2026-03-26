@@ -1,32 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Your Orders</title>
+<title>Orders</title>
 </head>
 <body>
 
-<h2>Your Orders</h2>
+<h2>Track Orders</h2>
+<input id="phone" placeholder="Phone">
+<button onclick="loadOrders()">Search</button>
+
 <div id="orders"></div>
 
-<script type="module">
-import { db } from "./firebase.js";
-import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
-
-let phone=new URLSearchParams(window.location.search).get("phone");
-
-async function load(){
- let snap=await getDocs(collection(db,"orders"));
- let html="";
- snap.forEach(d=>{
- let o=d.data();
- if(o.phone==phone){
- html+=`Order ID: ${d.id} | ₹${o.total} | ${o.status}<br>`;
- }
- });
- orders.innerHTML=html||"No orders found";
-}
-load();
-</script>
-
+<script type="module" src="orders.js"></script>
 </body>
 </html>
