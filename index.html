@@ -6,22 +6,22 @@
 </head>
 <body>
 
-<!-- HEADER -->
 <header class="header">
-<div class="logo">Azad Prime Medico</div>
-<input type="text" id="search" placeholder="Search medicines..." onkeyup="searchProduct()">
-<div class="cart-btn" onclick="openCart()">
-🛒 <span id="count">0</span>
+<div class="logo">
+<img src="logo.png" height="40">
+<span>Azad Prime Medico</span>
 </div>
+
+<input type="text" placeholder="Search medicines..." onkeyup="searchProduct(this.value)">
+
+<div class="cart-btn" onclick="openCart()">🛒 <span id="count">0</span></div>
 </header>
 
-<!-- HERO -->
 <section class="hero">
 <h1>Online Medical Store</h1>
 <p>Fast Delivery | Genuine Medicines | Best Prices</p>
 </section>
 
-<!-- CATEGORY -->
 <div class="categories">
 <button onclick="filterCategory('all')">All</button>
 <button onclick="filterCategory('tablet')">Tablets</button>
@@ -30,10 +30,8 @@
 <button onclick="filterCategory('personal')">Personal Care</button>
 </div>
 
-<!-- PRODUCTS -->
 <div id="products" class="products"></div>
 
-<!-- CART POPUP -->
 <div id="cartPopup" class="cart">
 <h3>Your Cart</h3>
 <div id="cartItems"></div>
@@ -47,11 +45,6 @@
 <button onclick="placeOrder()">Place Order</button>
 <button onclick="closeCart()">Close</button>
 </div>
-
-<!-- FOOTER -->
-<footer>
-<p>© 2026 Azad Prime Medico | All Rights Reserved</p>
-</footer>
 
 <script type="module" src="script.js"></script>
 </body>
