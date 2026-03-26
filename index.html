@@ -1,29 +1,26 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Azad Prime Medico</title>
-<link rel="stylesheet" href="style.css">
+  <title>Azad Prime Medico</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="header">
- <div class="logo">
-  <img src="logo.png">
-  Azad Prime Medico
- </div>
+<header>
+  <h1>Azad Prime Medico</h1>
+  <input type="text" placeholder="Search medicines...">
+</header>
 
- <input type="text" placeholder="Search medicines..." id="search">
-</div>
+<section class="hero">
+  <h2>Online Medical Store</h2>
+  <p>Fast Delivery | Genuine Medicines | Best Prices</p>
+</section>
 
-<div class="hero">
- <h1>Online Medical Store</h1>
- <p>Fast Delivery | Genuine Medicines | Best Prices</p>
-</div>
+<h2 class="title">Products</h2>
+<div id="products" class="products"></div>
 
-<div class="products" id="products"></div>
-
-<div class="cart-btn" onclick="openCart()">
- 🛒 <span id="cartCount">0</span>
+<div class="cart" onclick="openCart()">
+  🛒 <span id="cartCount">0</span>
 </div>
 
 <script type="module" src="script.js"></script>
