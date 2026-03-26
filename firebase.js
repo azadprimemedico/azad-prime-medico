@@ -7,7 +7,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyCqpzQLN_qu53CKbPa_XFDnoyN6SgxhKRw",
   authDomain: "azad-prime-medico.firebaseapp.com",
   projectId: "azad-prime-medico",
-  storageBucket: "azad-prime-medico.firebasestorage.app",
+  storageBucket: "azad-prime-medico.appspot.com",
   messagingSenderId: "111274201862",
   appId: "1:111274201862:web:a052eff79eca9f7d1ac487"
 };
