@@ -17,7 +17,7 @@ window.addToCart = (id,name,price)=>{
  saveCart();
 }
 
-window.openCart = async ()=>{
+window.openCart = ()=>{
  if(cart.length==0){ alert("Cart Empty"); return; }
 
  let name = prompt("Enter Name");
@@ -26,23 +26,39 @@ window.openCart = async ()=>{
 
  if(!name||!phone||!address) return alert("Fill details");
 
+ placeOrder(name,phone,address);
+}
+
+async function placeOrder(name,phone,address){
  let total = cart.reduce((s,i)=>s+i.price*i.qty,0);
 
- await addDoc(collection(db,"orders"),{
+ let order = {
   name,phone,address,
   items:cart,
   total,
   status:"New",
   date:new Date().toLocaleString()
- });
+ };
 
- let msg="Order:%0A";
+ let docRef = await addDoc(collection(db,"orders"), order);
+
+ // Save order for invoice
+ localStorage.setItem("lastOrder", JSON.stringify(order));
+
+ // WhatsApp Message
+ let msg="*Azad Prime Medico Order*%0A";
  cart.forEach(i=>{
-  msg+=i.name+" x"+i.qty+" = "+(i.price*i.qty)+"%0A";
+  msg+=i.name+" x"+i.qty+" = ₹"+(i.price*i.qty)+"%0A";
  });
- msg+="Total: "+total;
+ msg+="Total: ₹"+total;
 
  window.open("https://wa.me/91YOURNUMBER?text="+msg);
+
+ // UPI Payment
+ window.open("upi://pay?pa=YOURUPI@okaxis&pn=AzadPrimeMedico&am="+total);
+
+ // Invoice Page
+ window.open("invoice.html");
 
  cart=[];
  saveCart();
@@ -55,27 +71,9 @@ async function loadProducts(){
 
  snap.forEach(doc=>{
   let p=doc.data();
-  products.push(p);
-
   html+=`
   <div class="card">
   <img src="${p.image}">
   <h3>${p.name}</h3>
   <p>₹${p.price}</p>
-  <button class="btn" onclick="addToCart('${doc.id}','${p.name}',${p.price})">Add</button>
-  </div>`;
- });
-
- document.getElementById("products").innerHTML=html;
- saveCart();
-}
-
-window.searchProducts=(q)=>{
- let cards=document.querySelectorAll(".card");
- cards.forEach(c=>{
-  c.style.display = c.innerText.toLowerCase().includes(q.toLowerCase()) ? "block":"none";
- });
-}
-
-loadProducts();
-saveCart();
+  <button class="btn
