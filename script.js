@@ -41,35 +41,37 @@ window.openCart = ()=>{
 
 /* PLACE ORDER */
 async function placeOrder(name,phone,address){
- try{
-  let total = cart.reduce((s,i)=>s+i.price*i.qty,0);
+ let total = cart.reduce((s,i)=>s+i.price*i.qty,0);
 
-  let order = {
-   name: name,
-   phone: phone,
-   address: address,
-   items: cart,
-   total: total,
-   status: "New",
-   date: new Date().toLocaleString()
-  };
+ let order = {
+  name:name,
+  phone:phone,
+  address:address,
+  items:cart,
+  total:total,
+  status:"New",
+  date:new Date().toLocaleString()
+ };
 
-  await addDoc(collection(db,"orders"), order);
+ await addDoc(collection(db,"orders"), order);
 
-  // Save order for invoice
-  localStorage.setItem("lastOrder", JSON.stringify(order));
+ // Save order for invoice
+ localStorage.setItem("lastOrder", JSON.stringify(order));
 
-  // WhatsApp Message
-  let msg="Azad Prime Medico Order\n";
-  cart.forEach(i=>{
-   msg+=i.name+" x"+i.qty+" = ₹"+(i.price*i.qty)+"\n";
-  });
-  msg+="Total: ₹"+total;
+ // WhatsApp Message
+ let msg="*Azad Prime Medico Order*%0A";
+ cart.forEach(i=>{
+  msg+=i.name+" x"+i.qty+" = ₹"+(i.price*i.qty)+"%0A";
+ });
+ msg+="Total: ₹"+total+"%0A";
+ msg+="Name: "+name+"%0A";
+ msg+="Phone: "+phone+"%0A";
+ msg+="Address: "+address;
 
-  window.open("https://wa.me/91YOURNUMBER?text="+encodeURIComponent(msg));
+ window.open("https://wa.me/917633801161?text="+msg);
 
-  // UPI Payment
-  window.open("upi://pay?pa=YOURUPI@okaxis&pn=AzadPrimeMedico&am="+total);
+ // UPI Payment
+ window.open("upi://pay?pa=gulamhamid164@okaxis&pn=AzadPrimeMedico&am="+total
 
   // Invoice Page
   window.open("invoice.html");
