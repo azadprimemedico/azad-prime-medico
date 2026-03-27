@@ -2,94 +2,80 @@ import { db } from "./firebase.js";
 import { collection, getDocs, addDoc }
 from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
+let products = [];
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
 function saveCart(){
-  localStorage.setItem("cart", JSON.stringify(cart));
-}
-
-function updateCart(){
-  document.getElementById("cartCount").innerText = cart.length;
-  saveCart();
+ localStorage.setItem("cart", JSON.stringify(cart));
+ document.getElementById("cartCount").innerText = cart.length;
 }
 
 window.addToCart = (id,name,price)=>{
-  let item = cart.find(i => i.id === id);
-
-  if(item){
-    item.qty++;
-  }else{
-    cart.push({id,name,price,qty:1});
-  }
-
-  updateCart();
+ let item = cart.find(i=>i.id===id);
+ if(item) item.qty++;
+ else cart.push({id,name,price,qty:1});
+ saveCart();
 }
 
-window.openCart = ()=>{
-  if(cart.length === 0){
-    alert("Cart is empty");
-    return;
-  }
+window.openCart = async ()=>{
+ if(cart.length==0){ alert("Cart Empty"); return; }
 
-  let name = prompt("Enter Name");
-  let phone = prompt("Enter Mobile");
-  let address = prompt("Enter Address");
-  let pincode = prompt("Enter Pincode");
+ let name = prompt("Enter Name");
+ let phone = prompt("Enter Mobile");
+ let address = prompt("Enter Address");
 
-  if(!name || !phone || !address){
-    alert("Please fill all details");
-    return;
-  }
+ if(!name||!phone||!address) return alert("Fill details");
 
-  placeOrder(name, phone, address, pincode);
-}
+ let total = cart.reduce((s,i)=>s+i.price*i.qty,0);
 
-async function placeOrder(name,phone,address,pincode){
-  let total = cart.reduce((sum,item)=> sum + item.price * item.qty, 0);
+ await addDoc(collection(db,"orders"),{
+  name,phone,address,
+  items:cart,
+  total,
+  status:"New",
+  date:new Date().toLocaleString()
+ });
 
-  try{
-    await addDoc(collection(db,"orders"),{
-      name,
-      phone,
-      address,
-      pincode,
-      items: cart,
-      total,
-      status: "New",
-      date: new Date().toLocaleString()
-    });
+ let msg="Order:%0A";
+ cart.forEach(i=>{
+  msg+=i.name+" x"+i.qty+" = "+(i.price*i.qty)+"%0A";
+ });
+ msg+="Total: "+total;
 
-    alert("Order Placed Successfully");
+ window.open("https://wa.me/91YOURNUMBER?text="+msg);
 
-    cart = [];
-    updateCart();
-    localStorage.removeItem("cart");
-
-  }catch(e){
-    alert("Order Failed");
-    console.log(e);
-  }
+ cart=[];
+ saveCart();
+ alert("Order Placed");
 }
 
 async function loadProducts(){
-  const snap = await getDocs(collection(db,"products"));
-  let html="";
+ const snap = await getDocs(collection(db,"products"));
+ let html="";
 
-  snap.forEach(doc=>{
-    let p = doc.data();
+ snap.forEach(doc=>{
+  let p=doc.data();
+  products.push(p);
 
-    html += `
-    <div class="card">
-      <img src="${p.image}">
-      <h3>${p.name}</h3>
-      <p>₹${p.price}</p>
-      <button class="btn" onclick="addToCart('${doc.id}','${p.name}',${p.price})">Add to Cart</button>
-    </div>
-    `;
-  });
+  html+=`
+  <div class="card">
+  <img src="${p.image}">
+  <h3>${p.name}</h3>
+  <p>₹${p.price}</p>
+  <button class="btn" onclick="addToCart('${doc.id}','${p.name}',${p.price})">Add</button>
+  </div>`;
+ });
 
-  document.getElementById("products").innerHTML = html;
+ document.getElementById("products").innerHTML=html;
+ saveCart();
+}
+
+window.searchProducts=(q)=>{
+ let cards=document.querySelectorAll(".card");
+ cards.forEach(c=>{
+  c.style.display = c.innerText.toLowerCase().includes(q.toLowerCase()) ? "block":"none";
+ });
 }
 
 loadProducts();
-updateCart();
+saveCart();
