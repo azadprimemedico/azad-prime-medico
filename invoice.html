@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Invoice</title>
+</head>
+<body>
+
+<h2>Azad Prime Medico Invoice</h2>
+<div id="invoice"></div>
+<button onclick="window.print()">Print Invoice</button>
+
+<script>
+let order = JSON.parse(localStorage.getItem("lastOrder"));
+
+let html="";
+order.items.forEach(i=>{
+ html+=i.name+" x"+i.qty+" = ₹"+(i.price*i.qty)+"<br>";
+});
+
+html+="<hr>Total: ₹"+order.total;
+document.getElementById("invoice").innerHTML=html;
+</script>
+
+</body>
+</html>
