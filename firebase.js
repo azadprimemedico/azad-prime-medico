@@ -2,9 +2,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebas
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
 const firebaseConfig = {
- apiKey: "YOUR_API_KEY",
- authDomain: "YOUR_AUTH_DOMAIN",
- projectId: "YOUR_PROJECT_ID"
+  apiKey: "AIzaSyCqpzQlN_qu53CKbPa_XFDnoyN6SgxhKRw",
+  authDomain: "azad-prime-medico.firebaseapp.com",
+  projectId: "azad-prime-medico"
 };
 
 const app = initializeApp(firebaseConfig);
