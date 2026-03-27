@@ -17,7 +17,7 @@
     </div>
   </div>
 
-  <div class="cartBtn" onclick="openCart()">
+  <div class="cartBtn" onclick="viewCart()">
     🛒 Cart (<span id="cartCount">0</span>)
   </div>
 </header>
@@ -27,7 +27,27 @@
   <p>Order medicines online easily</p>
 </section>
 
+<!-- Customer Details -->
+<div class="orderForm">
+  <input type="text" id="custName" placeholder="Your Name">
+  <input type="text" id="custPhone" placeholder="Mobile Number">
+  <input type="text" id="custAddress" placeholder="Address">
+</div>
+
+<!-- Search -->
+<div class="searchBox">
+  <input type="text" id="search" placeholder="Search Medicine..." onkeyup="searchProducts()">
+</div>
+
+<!-- Products -->
 <div class="products" id="products"></div>
+
+<!-- Cart Actions -->
+<div class="cartActions">
+  <button onclick="whatsappOrder()">WhatsApp Order</button>
+  <button onclick="upiPayment()">UPI Payment</button>
+  <button onclick="openInvoice()">Invoice</button>
+</div>
 
 <script type="module" src="script.js"></script>
 </body>
