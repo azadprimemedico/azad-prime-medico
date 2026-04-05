@@ -3,6 +3,7 @@ import { collection, getDocs, addDoc }
 from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
+let productsData = [];
 
 /* SAVE CART */
 function saveCart(){
@@ -17,103 +18,110 @@ window.addToCart = (id,name,price)=>{
  if(item) item.qty++;
  else cart.push({id,name,price,qty:1});
  saveCart();
- alert("Added to cart");
 }
 
-/* OPEN CART / PLACE ORDER */
-window.openCart = ()=>{
+/* VIEW CART */
+window.viewCart = ()=>{
  if(cart.length==0){
   alert("Cart Empty");
   return;
  }
 
- let name = prompt("Enter Name");
- let phone = prompt("Enter Mobile");
- let address = prompt("Enter Address");
+ let text="Cart Items:\n";
+ cart.forEach(i=>{
+  text+=i.name+" x"+i.qty+"\n";
+ });
+ alert(text);
+}
+
+/* SAVE ORDER */
+window.placeOrder = async ()=>{
+ let name = document.getElementById("custName").value;
+ let phone = document.getElementById("custPhone").value;
+ let address = document.getElementById("custAddress").value;
 
  if(!name || !phone || !address){
-  alert("Fill details");
+  alert("Enter customer details");
   return;
  }
 
- placeOrder(name,phone,address);
-}
-
-/* PLACE ORDER */
-async function placeOrder(name,phone,address){
  let total = cart.reduce((s,i)=>s+i.price*i.qty,0);
 
  let order = {
-  name:name,
-  phone:phone,
-  address:address,
-  items:cart,
-  total:total,
+  name, phone, address,
+  items: cart,
+  total,
   status:"New",
   date:new Date().toLocaleString()
  };
 
  await addDoc(collection(db,"orders"), order);
-
- // Save order for invoice
  localStorage.setItem("lastOrder", JSON.stringify(order));
 
- // WhatsApp Message
- let msg="*Azad Prime Medico Order*%0A";
- cart.forEach(i=>{
-  msg+=i.name+" x"+i.qty+" = ₹"+(i.price*i.qty)+"%0A";
+ alert("Order Saved");
+}
+
+/* WHATSAPP */
+window.whatsappOrder = ()=>{
+ let order = JSON.parse(localStorage.getItem("lastOrder"));
+ if(!order){ alert("Save order first"); return; }
+
+ let msg="Azad Prime Medico Order\n";
+ order.items.forEach(i=>{
+  msg+=i.name+" x"+i.qty+" = ₹"+(i.price*i.qty)+"\n";
  });
- msg+="Total: ₹"+total+"%0A";
- msg+="Name: "+name+"%0A";
- msg+="Phone: "+phone+"%0A";
- msg+="Address: "+address;
+ msg+="Total ₹"+order.total;
 
- window.open("https://wa.me/917633801161?text="+msg);
+ window.open("https://wa.me/917633801161?text="+encodeURIComponent(msg));
+}
 
- // UPI Payment
- window.open("upi://pay?pa=gulamhamid164@okaxis&pn=AzadPrimeMedico&am="+total
+/* UPI */
+window.upiPayment = ()=>{
+ let order = JSON.parse(localStorage.getItem("lastOrder"));
+ if(!order){ alert("Save order first"); return; }
 
-  // Invoice Page
-  window.open("invoice.html");
+ window.open("upi://pay?pa=gulamhamid164@okaxis&pn=AzadPrimeMedico&am="+order.total);
+}
 
-  cart=[];
-  saveCart();
+/* INVOICE */
+window.openInvoice = ()=>{
+ window.open("invoice.html");
+}
 
-  alert("Order Placed Successfully");
+/* SEARCH */
+window.searchProducts = ()=>{
+ let s = document.getElementById("search").value.toLowerCase();
+ let filtered = productsData.filter(p=>p.name.toLowerCase().includes(s));
+ displayProducts(filtered);
+}
 
- }catch(e){
-  console.error(e);
-  alert("Order Failed");
- }
+/* DISPLAY PRODUCTS */
+function displayProducts(list){
+ let html="";
+ list.forEach(p=>{
+  html+=`
+  <div class="card">
+   <img src="${p.image}">
+   <h3>${p.name}</h3>
+   <p>₹${p.price}</p>
+   <button class="btn" onclick="addToCart('${p.id}','${p.name}',${p.price})">Add to Cart</button>
+  </div>
+  `;
+ });
+ document.getElementById("products").innerHTML=html;
 }
 
 /* LOAD PRODUCTS */
 async function loadProducts(){
- try{
-  const snap = await getDocs(collection(db,"products"));
-  let html="";
-
-  snap.forEach(doc=>{
-   let p = doc.data();
-
-   html+=`
-   <div class="card">
-    <img src="${p.image}">
-    <h3>${p.name}</h3>
-    <p>₹${p.price}</p>
-    <button class="btn" onclick="addToCart('${doc.id}','${p.name}',${p.price})">Add to Cart</button>
-   </div>
-   `;
-  });
-
-  document.getElementById("products").innerHTML =
-   html || "<h3>No Products Found</h3>";
-
- }catch(e){
-  console.error("Error loading products:", e);
- }
+ const snap = await getDocs(collection(db,"products"));
+ productsData=[];
+ snap.forEach(doc=>{
+  let p=doc.data();
+  p.id=doc.id;
+  productsData.push(p);
+ });
+ displayProducts(productsData);
 }
 
-/* INIT */
 loadProducts();
 saveCart();
