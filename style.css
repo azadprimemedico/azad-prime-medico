@@ -68,3 +68,48 @@ body{
  border-radius:5px;
  cursor:pointer;
 }
+
+.orderForm{
+ display:flex;
+ justify-content:center;
+ gap:10px;
+ padding:20px;
+}
+
+.orderForm input{
+ padding:10px;
+ border-radius:8px;
+ border:1px solid #ccc;
+}
+
+.searchBox{
+ text-align:center;
+ margin:10px;
+}
+
+.searchBox input{
+ padding:10px;
+ width:60%;
+ border-radius:20px;
+ border:1px solid #ccc;
+}
+
+.sectionTitle{
+ text-align:center;
+ margin-top:20px;
+}
+
+.cartActions{
+ text-align:center;
+ margin:20px;
+}
+
+.cartActions button{
+ padding:10px 15px;
+ margin:5px;
+ border:none;
+ border-radius:8px;
+ background:#0f9b0f;
+ color:white;
+ cursor:pointer;
+}
